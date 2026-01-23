@@ -1,10 +1,8 @@
 // mobile/api.js
 import axios from 'axios';
+import config from './config'; // Import the local config
 
-// REPLACE THIS WITH YOUR COMPUTER'S IP ADDRESS
-// Example: const BASE_URL = 'http://192.168.1.15:3000/api';
-// mobile/api.js
-const BASE_URL = 'http://10.0.0.145:3000/api';
+const BASE_URL = config.API_URL; // Use the URL from the config file
 
 const api = axios.create({
   baseURL: BASE_URL,
