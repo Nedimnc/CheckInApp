@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Touchable, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { registerUser } from '../api';
+import {registerUser } from '../api'; // Import the helper we just made
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen({ navigation }) {
   const [role, setRole] = useState('student'); // Default role
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    panther_id: '',
     password: '',
+    panther_id: '',
   });
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   // Dynamic styles based on role
   const primaryColor = role === 'student' ? '#2D52A2' : '#4CAF50';
@@ -23,12 +25,17 @@ export default function RegisterScreen({ navigation }) {
     }));
   };
 
-  const handleRegister = () => {
-    // Accessing safely from the state object
-    const { email, name, panther_id } = formData;
-    console.log(`Registering ${role}:`, email);
-    // Auth logic here
-  };
+  const handleRegister = async () => {
+    try {
+      const userData = { ...formData, role };
+      const user = await registerUser(userData);
+      Alert.alert('Success', `Account created for ${user.name}!`);
+      // Navigate back to the login page (dont go to a new page, go back one page)
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Registration failed');
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -94,15 +101,27 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(val) => handleInputChange('panther_id', val)}
                 value={formData.panther_id}
               />
-
+              
               <Text style={styles.label}>Password</Text>
+            <View style={styles.inputContainer}>
               <TextInput 
                 style={styles.input}
                 placeholder="••••••••••••"
-                secureTextEntry
+                secureTextEntry={!isPasswordVisible}
                 onChangeText={(val) => handleInputChange('password', val)}
                 value={formData.password}
               />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                >
+                  <Ionicons
+                    name={isPasswordVisible ? 'eye-off' : 'eye'}
+                    size={24}
+                    color="gray"
+                  />
+              </TouchableOpacity>
+            </View>
 
               <TouchableOpacity 
                 style={[styles.submitButton, { backgroundColor: primaryColor }]}
@@ -182,6 +201,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   input: {
+    flex: 1,
     backgroundColor: '#F9FAFB',
     borderWidth: 1,
     borderColor: '#E5E7EB',
@@ -200,5 +220,18 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
-  }
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+    marginBottom: 15,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    height: '70%',
+    justifyContent: 'top',
+  },
 });
