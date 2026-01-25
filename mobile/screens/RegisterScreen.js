@@ -26,11 +26,19 @@ export default function RegisterScreen({ navigation }) {
   };
 
   const handleRegister = async () => {
+    if (!formData.name || !formData.email || !formData.password || !formData.panther_id) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (!formData.email.endsWith('@gsu.edu') && !formData.email.endsWith('@student.gsu.edu')) {
+      Alert.alert('Error', 'Please use a valid GSU email address');
+      return;
+    }
     try {
       const userData = { ...formData, role };
       const user = await registerUser(userData);
       Alert.alert('Success', `Account created for ${user.name}!`);
-      // Navigate back to the login page (dont go to a new page, go back one page)
+      // Navigate back to the login page
       navigation.goBack();
     } catch (error) {
       Alert.alert('Error', error.message || 'Registration failed');
@@ -42,6 +50,7 @@ export default function RegisterScreen({ navigation }) {
       <KeyboardAvoidingView 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 115 : 0}
       >
         <ScrollView 
           contentContainerStyle={styles.scrollContent} 
@@ -131,7 +140,6 @@ export default function RegisterScreen({ navigation }) {
               </TouchableOpacity>
             </View>
           </View>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -146,9 +154,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'flex-start', 
-    paddingTop: 40, 
+    paddingVertical: 40, 
     paddingHorizontal: 20,
-    paddingBottom: 40,
   },
   card: {
     backgroundColor: '#FFF',

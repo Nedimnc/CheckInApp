@@ -1,10 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Touchable, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { loginUser } from '../api'; // Import the helper we just made
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+
+  const handleInputChange = (field, value) => {
+    if (field === 'email') {
+      setEmail(value);
+    } else if (field === 'password') {
+      setPassword(value);
+    }
+  }
 
   const handleLogin = async () => {
     try {
@@ -17,46 +28,156 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CheckIn Login</Text>
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
-      
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-
-      <Button title="Login" onPress={handleLogin} />
-      
-      <View style={{ marginTop: 20 }}>
-        <Button 
-          title="Create Account" 
-          onPress={() => navigation.navigate('Register')} 
-          color="gray"
-        />
-      </View>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          bounces={false} 
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.card}>
+            <Text style={styles.header}>Login to CheckIn</Text>
+              {/* Login input */}
+              <Text style={styles.label}>GSU Email</Text>
+              <TextInput 
+                style={styles.input}
+                placeholder="email@gsu.edu"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onChangeText={(val) => handleInputChange('email', val)}
+                value={setEmail.email}
+              />
+              <Text style={styles.label}>Password</Text>
+            <View style={styles.inputContainer}>
+              <TextInput 
+                style={styles.input}
+                placeholder="••••••••••••"
+                secureTextEntry={!isPasswordVisible}
+                onChangeText={(val) => handleInputChange('password', val)}
+                value={setPassword.password}
+              />
+              <TouchableOpacity
+                style={styles.eyeIcon}
+                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                >
+                  <Ionicons
+                    name={isPasswordVisible ? 'eye-off' : 'eye'}
+                    size={24}
+                    color="gray"
+                  />
+              </TouchableOpacity>
+            </View>
+              <TouchableOpacity 
+                style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
+                onPress={handleLogin}
+              >
+                <Text style={styles.submitText}>Log In</Text>
+              </TouchableOpacity>
+              <View style={styles.footerContainer}>
+                <Text style={styles.footer}>Don't have an account? </Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <Text style={styles.signUpText}>Sign Up</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, justifyContent: 'center' },
-  title: { fontSize: 28, marginBottom: 30, textAlign: 'center' },
-  input: { 
-    borderWidth: 1, 
-    borderColor: '#ddd', 
-    padding: 15, 
-    marginBottom: 15, 
-    borderRadius: 8 
+  container: {
+    flex: 1,
+    backgroundColor: '#F5F7FA',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'flex-start', 
+    paddingTop: '25%', 
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
+  card: {
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    elevation: 5,
+  },
+  header: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#333',
+  },
+  icon: {
+    fontSize: 24,
+    marginBottom: 4,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 6,
+    marginLeft: 4,
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  submitButton: {
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  submitText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+    width: '100%',
+    marginBottom: 15,
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 15,
+    height: '70%',
+    justifyContent: 'top',
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  footer: {
+    textAlign: 'left',
+    color: '#666',
+  },
+  signUpText: {
+    textAlign: 'right',
+    color: '#2D52A2',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   }
 });
