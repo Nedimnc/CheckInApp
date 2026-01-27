@@ -1,41 +1,29 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Touchable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import {registerUser } from '../api'; // Import the helper we just made
+import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { registerUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen({ navigation }) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [panther_id, setPantherId] = useState('');
   const [role, setRole] = useState('student'); // Default role
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    panther_id: '',
-  });
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-
   // Dynamic styles based on role
   const primaryColor = role === 'student' ? '#2D52A2' : '#4CAF50';
   const lightBg = role === 'student' ? '#E9EFFD' : '#E8F5E9';
-
-  const handleInputChange = (field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
   const handleRegister = async () => {
-    if (!formData.name || !formData.email || !formData.password || !formData.panther_id) {
+    if (!name || !email || !password || !panther_id) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    if (!formData.email.endsWith('@gsu.edu') && !formData.email.endsWith('@student.gsu.edu')) {
+    if (!email.endsWith('@gsu.edu') && !email.endsWith('@student.gsu.edu')) {
       Alert.alert('Error', 'Please use a valid GSU email address');
       return;
     }
     try {
-      const userData = { ...formData, role };
+      const userData = { name, email, password, panther_id, role };
       const user = await registerUser(userData);
       Alert.alert('Success', `Account created for ${user.name}!`);
       // Navigate back to the login page
@@ -46,115 +34,103 @@ export default function RegisterScreen({ navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 115 : 0}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        bounces={true}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
-          bounces={false} 
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            <Text style={styles.header}>Join the community</Text>
-            <View style={styles.roleContainer}>
-              <TouchableOpacity 
-                style={[
-                  styles.roleButton, 
-                  role === 'student' && { borderColor: '#2D52A2', backgroundColor: lightBg }
-                ]}
-                onPress={() => setRole('student')}
-              >
-                <Text style={styles.icon}>🎒</Text>
-                <Text style={[styles.roleText, role === 'student' && { color: '#2D52A2' }]}>Student</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={[
-                  styles.roleButton, 
-                  role === 'tutor' && { borderColor: '#4CAF50', backgroundColor: lightBg }
-                ]}
-                onPress={() => setRole('tutor')}
-              >
-                <Text style={styles.icon}>📖</Text>
-                <Text style={[styles.roleText, role === 'tutor' && { color: '#4CAF50' }]}>Tutor</Text>
-              </TouchableOpacity>
-            </View>
-            {/* Input form */}
-            <View style={styles.form}>
-              <Text style={styles.label}>Full Name</Text>
-              <TextInput 
-                style={styles.input}
-                placeholder="Jane Doe"
-                onChangeText={(val) => handleInputChange('name', val)}
-                value={formData.name}
-              />
-
-              <Text style={styles.label}>GSU Email</Text>
-              <TextInput 
-                style={styles.input}
-                placeholder="email@gsu.edu"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onChangeText={(val) => handleInputChange('email', val)}
-                value={formData.email}
-              />
-
-              <Text style={styles.label}>Panther ID</Text>
-              <TextInput 
-                style={styles.input}
-                placeholder="002-XXXX-XX"
-                keyboardType="numeric"
-                onChangeText={(val) => handleInputChange('panther_id', val)}
-                value={formData.panther_id}
-              />
-              
-              <Text style={styles.label}>Password</Text>
+        <View style={styles.card}>
+          <Text style={styles.header}>Join the community</Text>
+          <View style={styles.roleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.roleButton,
+                role === 'student' && { borderColor: '#2D52A2', backgroundColor: lightBg }
+              ]}
+              onPress={() => setRole('student')}
+            >
+              <Text style={styles.icon}>🎒</Text>
+              <Text style={[styles.roleText, role === 'student' && { color: '#2D52A2' }]}>Student</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.roleButton,
+                role === 'tutor' && { borderColor: '#4CAF50', backgroundColor: lightBg }
+              ]}
+              onPress={() => setRole('tutor')}
+            >
+              <Text style={styles.icon}>📖</Text>
+              <Text style={[styles.roleText, role === 'tutor' && { color: '#4CAF50' }]}>Tutor</Text>
+            </TouchableOpacity>
+          </View>
+          {/* Input form */}
+          <View style={styles.form}>
+            <Text style={styles.label}>Full Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Jane Doe"
+              onChangeText={setName}
+              value={name}
+            />
+            <Text style={styles.label}>GSU Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="email@gsu.edu"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              onChangeText={setEmail}
+              value={email}
+            />
+            <Text style={styles.label}>Panther ID</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="002-XXXX-XX"
+              keyboardType="numeric"
+              onChangeText={setPantherId}
+              value={panther_id}
+            />
+            <Text style={styles.label}>Password</Text>
             <View style={styles.inputContainer}>
-              <TextInput 
+              <TextInput
                 style={styles.input}
                 placeholder="••••••••••••"
                 secureTextEntry={!isPasswordVisible}
-                onChangeText={(val) => handleInputChange('password', val)}
-                value={formData.password}
+                onChangeText={setPassword}
+                value={password}
               />
               <TouchableOpacity
                 style={styles.eyeIcon}
                 onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                >
-                  <Ionicons
-                    name={isPasswordVisible ? 'eye-off' : 'eye'}
-                    size={24}
-                    color="gray"
-                  />
-              </TouchableOpacity>
-            </View>
-
-              <TouchableOpacity 
-                style={[styles.submitButton, { backgroundColor: primaryColor }]}
-                onPress={handleRegister}
               >
-                <Text style={styles.submitText}>Create Account</Text>
+                <Ionicons
+                  name={isPasswordVisible ? 'eye-off' : 'eye'}
+                  size={24}
+                  color="gray"
+                />
               </TouchableOpacity>
             </View>
+            <TouchableOpacity
+              style={[styles.submitButton, { backgroundColor: primaryColor }]}
+              onPress={handleRegister}
+            >
+              <Text style={styles.submitText}>Create Account</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start', 
-    paddingVertical: 40, 
+    justifyContent: 'flex-start',
+    paddingVertical: '20%',
     paddingHorizontal: 20,
   },
   card: {
@@ -233,7 +209,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     width: '100%',
-    marginBottom: 15,
   },
   eyeIcon: {
     position: 'absolute',

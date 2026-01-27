@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Touchable, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { loginUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
 
@@ -9,97 +8,94 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const handleInputChange = (field, value) => {
-    if (field === 'email') {
-      setEmail(value);
-    } else if (field === 'password') {
-      setPassword(value);
-    }
-  }
-
   const handleLogin = async () => {
     try {
       const user = await loginUser(email, password);
       Alert.alert('Success', `Welcome back, ${user.name}!`);
       // Later we will navigate to Dashboard here
+      // navigation.replace('Dashboard');
     } catch (error) {
       Alert.alert('Error', error.message || 'Login failed');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        bounces={true}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContent} 
-          bounces={false} 
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.card}>
-            <Text style={styles.header}>Login to CheckIn</Text>
-              {/* Login input */}
-              <Text style={styles.label}>GSU Email</Text>
-              <TextInput 
-                style={styles.input}
-                placeholder="email@gsu.edu"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                onChangeText={(val) => handleInputChange('email', val)}
-                value={setEmail.email}
+        <View style={styles.card}>
+          <Text style={styles.header}>Login to CheckIn</Text>
+          {/* Login input */}
+          <Text style={styles.label}>GSU Email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="email@gsu.edu"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onChangeText={setEmail}
+            value={email}
+          />
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••••••"
+              secureTextEntry={!isPasswordVisible}
+              onChangeText={setPassword}
+              value={password}
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+            >
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off' : 'eye'}
+                size={24}
+                color="gray"
               />
-              <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
-              <TextInput 
-                style={styles.input}
-                placeholder="••••••••••••"
-                secureTextEntry={!isPasswordVisible}
-                onChangeText={(val) => handleInputChange('password', val)}
-                value={setPassword.password}
-              />
-              <TouchableOpacity
-                style={styles.eyeIcon}
-                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                >
-                  <Ionicons
-                    name={isPasswordVisible ? 'eye-off' : 'eye'}
-                    size={24}
-                    color="gray"
-                  />
-              </TouchableOpacity>
-            </View>
-              <TouchableOpacity 
-                style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
-                onPress={handleLogin}
-              >
-                <Text style={styles.submitText}>Log In</Text>
-              </TouchableOpacity>
-              <View style={styles.footerContainer}>
-                <Text style={styles.footer}>Don't have an account? </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                  <Text style={styles.signUpText}>Sign Up</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
+            onPress={handleLogin}
+          >
+            <Text style={styles.submitText}>Log In</Text>
+          </TouchableOpacity>
+          {/* Quick login for developmental purposes with custom credentials */}
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: '#173062' }]}
+            /* Change 'email' and 'password' as needed */
+            onPress={() => {
+              setEmail('student@gsu.edu');
+              setPassword('password');
+            }}
+          >
+            <Text style={styles.submitText}>Quick fill (dev button)</Text>
+          </TouchableOpacity>
+          <View style={styles.footerContainer}>
+            <Text style={styles.footer}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.signUpText}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
-  },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start', 
-    paddingTop: '25%', 
+    justifyContent: 'flex-start',
+    paddingVertical: '40%',
     paddingHorizontal: 20,
-    paddingBottom: 40,
   },
   card: {
     backgroundColor: '#FFF',
@@ -156,7 +152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
     width: '100%',
-    marginBottom: 15,
   },
   eyeIcon: {
     position: 'absolute',
