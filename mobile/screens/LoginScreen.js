@@ -13,7 +13,7 @@ export default function LoginScreen({ navigation }) {
       const user = await loginUser(email, password);
       Alert.alert('Success', `Welcome back, ${user.name}!`);
       // Later we will navigate to Dashboard here
-      // navigation.replace('Dashboard');
+      navigation.replace('MainTabs');
     } catch (error) {
       Alert.alert('Error', error.message || 'Login failed');
     }

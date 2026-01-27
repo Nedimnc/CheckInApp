@@ -1,10 +1,10 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-export default function Profile({ navigation }) {
+export default function Schedule({ navigation }) {
   return (
     <ScrollView>
       <View style={styles.container}>
-        <Text style={{ fontSize: 35, fontWeight: 'bold' }}>Profile Screen</Text>
+        <Text style={{ fontSize: 35, fontWeight: 'bold' }}>Schedule Screen</Text>
       </View>
     </ScrollView >
   );
