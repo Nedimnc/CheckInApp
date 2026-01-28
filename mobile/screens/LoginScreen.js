@@ -2,18 +2,20 @@ import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { loginUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
+import { useHeaderHeight } from '@react-navigation/elements';
 
 export default function LoginScreen({ navigation }) {
+  const headerHeight = useHeaderHeight();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const handleLogin = async () => {
+  const handleLogin = async (role) => {
     try {
       const user = await loginUser(email, password);
       Alert.alert('Success', `Welcome back, ${user.name}!`);
       // Later we will navigate to Dashboard here
-      navigation.replace('MainTabs');
+      navigation.replace('MainTabs', { role: user.role });
     } catch (error) {
       Alert.alert('Error', error.message || 'Login failed');
     }
@@ -25,9 +27,10 @@ export default function LoginScreen({ navigation }) {
       style={{ flex: 1 }}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        bounces={true}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[
+          styles.scrollContent, { paddingBottom: headerHeight }]}
+          bounces={true}
+          keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
           <Text style={styles.header}>Login to CheckIn</Text>
@@ -67,16 +70,25 @@ export default function LoginScreen({ navigation }) {
           >
             <Text style={styles.submitText}>Log In</Text>
           </TouchableOpacity>
-          {/* Quick login for developmental purposes with custom credentials */}
+          {/* Quick login for developmental purposes with custom credentials for student and tutor */}
+          {/* Change 'email' and 'password' as needed */}
           <TouchableOpacity
             style={[styles.submitButton, { backgroundColor: '#173062' }]}
-            /* Change 'email' and 'password' as needed */
             onPress={() => {
               setEmail('student@gsu.edu');
               setPassword('password');
             }}
           >
-            <Text style={styles.submitText}>Quick fill (dev button)</Text>
+            <Text style={styles.submitText}>Quick Student (dev button)</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.submitButton, { backgroundColor: '#173062' }]}
+            onPress={() => {
+              setEmail('tutor@gsu.edu');
+              setPassword('tutor');
+            }}
+          >
+            <Text style={styles.submitText}>Quick Tutor (dev button)</Text>
           </TouchableOpacity>
           <View style={styles.footerContainer}>
             <Text style={styles.footer}>Don't have an account? </Text>
@@ -93,8 +105,7 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
-    paddingVertical: '40%',
+    justifyContent: 'center',
     paddingHorizontal: 20,
   },
   card: {

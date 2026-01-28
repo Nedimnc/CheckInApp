@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { registerUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
+import { useHeaderHeight } from '@react-navigation/elements';
+
 
 export default function RegisterScreen({ navigation }) {
+  const headerHeight = useHeaderHeight();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,9 +42,10 @@ export default function RegisterScreen({ navigation }) {
       style={{ flex: 1 }}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        bounces={true}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={[
+          styles.scrollContent, { paddingBottom: headerHeight }]}
+          bounces={true}
+          keyboardShouldPersistTaps="handled"
       >
         <View style={styles.card}>
           <Text style={styles.header}>Join the community</Text>
@@ -129,9 +133,9 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'flex-start',
-    paddingVertical: '20%',
+    justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   card: {
     backgroundColor: '#FFF',

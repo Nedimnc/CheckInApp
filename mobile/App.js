@@ -7,14 +7,16 @@ import { Ionicons } from '@expo/vector-icons';
 // Import Screens
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
-import DashboardScreen from './screens/DashboardScreen';
+import StudentDashboardScreen from './screens/StudentDashboardScreen';
+import TutorDashboardScreen from './screens/TutorDashboardScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-function MyTabs() {
+function MyTabs({ route }) {
+  const { role } = route.params || { role: 'student' }; // Default to student if not provided
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -35,9 +37,9 @@ function MyTabs() {
     >
       <Tab.Screen
         name="Dashboard"
-        component={DashboardScreen}
+        component={role === 'student' ? StudentDashboardScreen : TutorDashboardScreen}
         options={{
-          headerTitle: 'Find a Session',
+          headerTitle: role === 'student' ? 'Student Dashboard' : 'Tutor Dashboard',
           headerTitleStyle: { fontSize: 20 }
         }} />
       <Tab.Screen
