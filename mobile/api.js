@@ -29,4 +29,13 @@ export const registerUser = async (userData) => {
   }
 };
 
+export const createSession = async (sessionData) => {
+  try {
+    const response = await api.post('/sessions/create', sessionData);
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : { message: 'Network Error' };
+  }
+};
+
 export default api;

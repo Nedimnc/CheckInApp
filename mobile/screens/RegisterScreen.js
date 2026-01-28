@@ -13,9 +13,10 @@ export default function RegisterScreen({ navigation }) {
   const [panther_id, setPantherId] = useState('');
   const [role, setRole] = useState('student'); // Default role
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  // Dynamic styles based on role
+
   const primaryColor = role === 'student' ? '#2D52A2' : '#4CAF50';
   const lightBg = role === 'student' ? '#E9EFFD' : '#E8F5E9';
+
   const handleRegister = async () => {
     if (!name || !email || !password || !panther_id) {
       Alert.alert('Error', 'Please fill in all fields');

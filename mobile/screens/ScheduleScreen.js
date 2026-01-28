@@ -1,8 +1,11 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 export default function Schedule({ navigation }) {
+
   return (
-    <ScrollView>
+    <ScrollView
+      bounces={true}
+    >
       <View style={styles.container}>
         <Text style={{ fontSize: 35, fontWeight: 'bold' }}>Schedule Screen</Text>
       </View>
@@ -15,6 +18,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: '15%',
   },
 });

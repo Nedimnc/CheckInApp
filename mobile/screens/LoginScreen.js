@@ -1,18 +1,21 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { loginUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
+import { AuthContext } from '../context/AuthContext';
 
 export default function LoginScreen({ navigation }) {
   const headerHeight = useHeaderHeight();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const { setUser } = useContext(AuthContext);
 
   const handleLogin = async (role) => {
     try {
       const user = await loginUser(email, password);
+      setUser(user);
       Alert.alert('Success', `Welcome back, ${user.name}!`);
       // Later we will navigate to Dashboard here
       navigation.replace('MainTabs', { role: user.role });
@@ -73,7 +76,7 @@ export default function LoginScreen({ navigation }) {
           {/* Quick login for developmental purposes with custom credentials for student and tutor */}
           {/* Change 'email' and 'password' as needed */}
           <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: '#173062' }]}
+            style={[styles.submitButton, { backgroundColor: '#1b3366' }]}
             onPress={() => {
               setEmail('student@gsu.edu');
               setPassword('password');
@@ -82,7 +85,7 @@ export default function LoginScreen({ navigation }) {
             <Text style={styles.submitText}>Quick Student (dev button)</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: '#173062' }]}
+            style={[styles.submitButton, { backgroundColor: '#2f7031' }]}
             onPress={() => {
               setEmail('tutor@gsu.edu');
               setPassword('tutor');

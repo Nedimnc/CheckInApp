@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 export default function Profile({ navigation }) {
+
   return (
     <ScrollView>
       <View style={styles.container}>
@@ -15,6 +16,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: '15%',
   },
 });

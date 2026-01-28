@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { AuthProvider } from './context/AuthContext';
 
 // Import Screens
 import LoginScreen from './screens/LoginScreen';
@@ -11,6 +12,7 @@ import StudentDashboardScreen from './screens/StudentDashboardScreen';
 import TutorDashboardScreen from './screens/TutorDashboardScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
+import SessionCreateScreen from './screens/SessionCreateScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -62,15 +64,20 @@ function MyTabs({ route }) {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen
-          name="MainTabs"
-          component={MyTabs}
-          options={{ title: 'Find a Session', headerShown: false }} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <AuthProvider>
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerTitle: '' }} />
+            <Stack.Screen
+              name="MainTabs"
+              component={MyTabs}
+              options={{ title: 'Find a Session', headerShown: false }} />
+          </Stack.Group>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </AuthProvider>
   );
 }
