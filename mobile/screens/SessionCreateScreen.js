@@ -26,6 +26,7 @@ export default function SessionCreateScreen({ route, navigation }) {
   const [chooseTimeDate, setChooseTimeDate] = useState('Date');
   const [mode, setMode] = useState('date');
   const [showDatePicker, setShowDatePicker] = useState(platform);
+  const [inlineDisplay, setInlineDisplay] = useState('inline');
 
   // Update navigation title based on mode
   useEffect(() => {
@@ -104,7 +105,7 @@ export default function SessionCreateScreen({ route, navigation }) {
         <View style={styles.row}>
           <TouchableOpacity 
             style={[styles.timeCard, chooseTimeDate === 'Date' && styles.activeCard]} 
-            onPress={() => { setChooseTimeDate('Date'); setMode('date'); setShowDatePicker(true); }}
+            onPress={() => { setChooseTimeDate('Date'); setMode('date'); setShowDatePicker(true); setInlineDisplay('inline'); }}
           >
             <Text style={styles.cardLabel}>Date</Text>
             <Text style={styles.timeValue}>{startDate.toLocaleDateString()}</Text>
@@ -112,7 +113,7 @@ export default function SessionCreateScreen({ route, navigation }) {
 
           <TouchableOpacity 
             style={[styles.timeCard, chooseTimeDate === 'Start' && styles.activeCard]} 
-            onPress={() => { setChooseTimeDate('Start'); setMode('time'); setShowDatePicker(true); }}
+            onPress={() => { setChooseTimeDate('Start'); setMode('time'); setShowDatePicker(true); setInlineDisplay('spinner'); }}
           >
             <Text style={styles.cardLabel}>Start</Text>
             <Text style={styles.timeValue}>{startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
@@ -120,7 +121,7 @@ export default function SessionCreateScreen({ route, navigation }) {
 
           <TouchableOpacity 
             style={[styles.timeCard, chooseTimeDate === 'End' && styles.activeEndCard]} 
-            onPress={() => { setChooseTimeDate('End'); setMode('time'); setShowDatePicker(true); }}
+            onPress={() => { setChooseTimeDate('End'); setMode('time'); setShowDatePicker(true); setInlineDisplay('spinner'); }}
           >
             <Text style={styles.cardLabel}>End</Text>
             <Text style={styles.timeValue}>{endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
@@ -133,7 +134,7 @@ export default function SessionCreateScreen({ route, navigation }) {
               value={chooseTimeDate === 'Start' ? startDate : endDate}
               mode={mode}
               is24Hour={false}
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              display={Platform.OS === 'ios' ? inlineDisplay : 'default'}
               onChange={onDateChange}
               minimumDate={new Date()}
             />
