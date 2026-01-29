@@ -20,4 +20,16 @@ router.post('/create', async (req, res) => {
     }
 });
 
+// GET ALL SESSIONS ROUTE
+router.get('/fetch', async (req, res) => {
+    console.log("Fetching all sessions");
+    try {
+        const sessions = await pool.query('SELECT * FROM sessions');
+        res.json(sessions.rows);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 module.exports = router;

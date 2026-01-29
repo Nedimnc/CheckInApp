@@ -15,8 +15,8 @@ CREATE TABLE sessions (
     student_id INT REFERENCES users(user_id),
     title VARCHAR(100),
     subject VARCHAR(50),
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP NOT NULL,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
     location VARCHAR(100),
     status VARCHAR(20) DEFAULT 'open'
 );
@@ -25,6 +25,6 @@ CREATE TABLE attendance (
     attendance_id SERIAL PRIMARY KEY,
     session_id INT REFERENCES sessions(session_id),
     student_id INT REFERENCES users(user_id),
-    check_in_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    check_in_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     check_in_status VARCHAR(20) DEFAULT 'present'
 );

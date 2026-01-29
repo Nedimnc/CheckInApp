@@ -25,83 +25,78 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
+    <ScrollView
+      contentContainerStyle={[
+        styles.scrollContent, { paddingBottom: headerHeight }]}
+      bounces={true}
+      keyboardShouldPersistTaps="handled"
     >
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent, { paddingBottom: headerHeight }]}
-          bounces={true}
-          keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.card}>
-          <Text style={styles.header}>Login to CheckIn</Text>
-          {/* Login input */}
-          <Text style={styles.label}>GSU Email</Text>
+      <View style={styles.card}>
+        <Text style={styles.header}>Login to CheckIn</Text>
+        {/* Login input */}
+        <Text style={styles.label}>GSU Email</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="email@gsu.edu"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          onChangeText={setEmail}
+          value={email}
+        />
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.inputContainer}>
           <TextInput
             style={styles.input}
-            placeholder="email@gsu.edu"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            onChangeText={setEmail}
-            value={email}
+            placeholder="••••••••••••"
+            secureTextEntry={!isPasswordVisible}
+            onChangeText={setPassword}
+            value={password}
           />
-          <Text style={styles.label}>Password</Text>
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="••••••••••••"
-              secureTextEntry={!isPasswordVisible}
-              onChangeText={setPassword}
-              value={password}
+          <TouchableOpacity
+            style={styles.eyeIcon}
+            onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+          >
+            <Ionicons
+              name={isPasswordVisible ? 'eye-off' : 'eye'}
+              size={24}
+              color="gray"
             />
-            <TouchableOpacity
-              style={styles.eyeIcon}
-              onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-            >
-              <Ionicons
-                name={isPasswordVisible ? 'eye-off' : 'eye'}
-                size={24}
-                color="gray"
-              />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
-            onPress={handleLogin}
-          >
-            <Text style={styles.submitText}>Log In</Text>
           </TouchableOpacity>
-          {/* Quick login for developmental purposes with custom credentials for student and tutor */}
-          {/* Change 'email' and 'password' as needed */}
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: '#1b3366' }]}
-            onPress={() => {
-              setEmail('student@gsu.edu');
-              setPassword('password');
-            }}
-          >
-            <Text style={styles.submitText}>Quick Student (dev button)</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.submitButton, { backgroundColor: '#2f7031' }]}
-            onPress={() => {
-              setEmail('tutor@gsu.edu');
-              setPassword('tutor');
-            }}
-          >
-            <Text style={styles.submitText}>Quick Tutor (dev button)</Text>
-          </TouchableOpacity>
-          <View style={styles.footerContainer}>
-            <Text style={styles.footer}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.signUpText}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
+          onPress={handleLogin}
+        >
+          <Text style={styles.submitText}>Log In</Text>
+        </TouchableOpacity>
+        {/* Quick login for developmental purposes with custom credentials for student and tutor */}
+        {/* Change 'email' and 'password' as needed */}
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: '#1b3366' }]}
+          onPress={() => {
+            setEmail('student@gsu.edu');
+            setPassword('student');
+          }}
+        >
+          <Text style={styles.submitText}>Quick Student (dev button)</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.submitButton, { backgroundColor: '#2f7031' }]}
+          onPress={() => {
+            setEmail('tutor@gsu.edu');
+            setPassword('tutor');
+          }}
+        >
+          <Text style={styles.submitText}>Quick Tutor (dev button)</Text>
+        </TouchableOpacity>
+        <View style={styles.footerContainer}>
+          <Text style={styles.footer}>Don't have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={styles.signUpText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
   );
 }
 

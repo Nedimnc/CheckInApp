@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const sessionsRoutes = require('./routes/sessions');
+const usersRoutes = require('./routes/users');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json()); // Allows us to parse JSON bodies
 app.use('/api/auth', authRoutes);
 app.use('/api/sessions', sessionsRoutes);
+app.use('/api/users', usersRoutes);
 
 // Database Connection
 const pool = require('./db');

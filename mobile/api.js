@@ -38,4 +38,22 @@ export const createSession = async (sessionData) => {
   }
 };
 
+export const getSessions = async () => {
+  try {
+    const response = await api.get('/sessions/fetch');
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : { message: 'Network Error' };
+  }
+};
+
+export const getUsers = async () => {
+  try {
+    const response = await api.get('/users/fetch');
+    return response.data;
+  } catch (error) {
+    throw error.response ? error.response.data : { message: 'Network Error' };
+  }
+}
+
 export default api;

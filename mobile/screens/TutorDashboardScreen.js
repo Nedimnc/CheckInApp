@@ -1,17 +1,62 @@
-import React, { useState, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useContext, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
+import { getSessions } from '../api';
+import { useIsFocused } from '@react-navigation/native';
 
 export default function TutorDashboard({ navigation }) {
   const { user } = useContext(AuthContext);
+  const [sessions, setSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const isFocused = useIsFocused();
+  const [refreshing, setRefreshing] = React.useState(false);
+
+  useEffect(() => {
+    if (isFocused)
+      loadData();
+  }, [isFocused]);
+
+  const loadData = async () => {
+    try {
+      const data = await getSessions();
+      setSessions(data);
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 200);
+    loadData();
+  }, []);
+
+  if (loading) return <ActivityIndicator size="large" />;
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
         <View style={styles.scrollContent}>
-          <View style={styles.mainCard}>
+          <View>
             <Text style={styles.headerText}>Your Sessions</Text>
+            {sessions
+              .filter((session) => session.tutor_id === user?.user_id)
+              .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+              .map((session) => (
+                <View key={session.session_id} style={styles.sessionCard}>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>{session.subject}: {session.title}</Text>
+                  <Text>Date: {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+                  <Text>Time: {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  <Text>Location: {session.location}</Text>
+                </View>
+              ))}
           </View>
         </View>
       </ScrollView>
@@ -21,7 +66,6 @@ export default function TutorDashboard({ navigation }) {
       >
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
-
     </View>
   );
 }
@@ -45,9 +89,9 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 5,
   },
-  card: {
+  sessionCard: {
     backgroundColor: '#FFF',
-    borderRadius: 24,
+    borderRadius: 16,
     padding: 24,
     width: '100%',
     shadowColor: '#000',
@@ -55,6 +99,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 20,
     elevation: 5,
+    marginTop: 10,
   },
   header: {
     fontSize: 22,

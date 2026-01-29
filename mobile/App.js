@@ -74,7 +74,7 @@ export default function App() {
             <Stack.Screen
               name="MainTabs"
               component={MyTabs}
-              options={{ title: 'Find a Session', headerShown: false }} />
+              options={{ title: 'Back', headerShown: false }} />
           </Stack.Group>
         </Stack.Navigator>
       </NavigationContainer>
