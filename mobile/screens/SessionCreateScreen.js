@@ -9,18 +9,21 @@ export default function SessionCreateScreen({ route, navigation }) {
   const { user } = useContext(AuthContext);
   // Check if we are in "Edit Mode" by seeing if a session was passed
   const { sessionToEdit } = route.params || {};
-  const isEditMode = !!sessionToEdit;
+  // True if we have any incoming data (edit or copy)
+  const isPreFilled = !!sessionToEdit;
+  // True if we are editing an existing session (has session_id)
+  const isEditMode = !!(sessionToEdit && sessionToEdit.session_id);
 
   const tutor_id = user?.user_id;
   const platform = Platform.OS === 'ios' ? true : false;
   
   // Initialize state: If editing, use existing data. If new, use defaults.
-  const [title, setTitle] = useState(isEditMode ? sessionToEdit.title : '');
-  const [subject, setSubject] = useState(isEditMode ? sessionToEdit.subject : '');
-  const [location, setLocation] = useState(isEditMode ? sessionToEdit.location : '');
+  const [title, setTitle] = useState(isPreFilled ? sessionToEdit.title : '');
+  const [subject, setSubject] = useState(isPreFilled ? sessionToEdit.subject : '');
+  const [location, setLocation] = useState(isPreFilled ? sessionToEdit.location : '');
   
-  const [startDate, setStartDate] = useState(isEditMode ? new Date(sessionToEdit.start_time) : new Date());
-  const [endDate, setEndDate] = useState(isEditMode ? new Date(sessionToEdit.end_time) : new Date());
+  const [startDate, setStartDate] = useState(isPreFilled ? new Date(sessionToEdit.start_time) : new Date());
+  const [endDate, setEndDate] = useState(isPreFilled ? new Date(sessionToEdit.end_time) : new Date());
 
   // Date Picker State
   const [chooseTimeDate, setChooseTimeDate] = useState('Date');
@@ -30,8 +33,8 @@ export default function SessionCreateScreen({ route, navigation }) {
 
   // Update navigation title based on mode
   useEffect(() => {
-    navigation.setOptions({ title: isEditMode ? 'Edit Session' : 'New Session' });
-  }, [navigation, isEditMode]);
+    navigation.setOptions({ title: isPreFilled ? (isEditMode ? 'Edit Session' : 'Copy Session') : 'New Session' });
+  }, [navigation, isPreFilled, isEditMode]);
 
   const onDateChange = (event, selectedDate) => {
     if (Platform.OS === 'android') setShowDatePicker(false);
@@ -69,7 +72,8 @@ export default function SessionCreateScreen({ route, navigation }) {
         subject, 
         start_time: startDate.toISOString(), 
         end_time: endDate.toISOString(), 
-        location 
+        location,
+        status: sessionToEdit?.status || 'open'
       };
 
       if (isEditMode) {
@@ -89,7 +93,7 @@ export default function SessionCreateScreen({ route, navigation }) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.headerText}>{isEditMode ? 'Edit Session Details' : 'Session Details'}</Text>
+      <Text style={styles.headerText}>{isPreFilled ? (isEditMode ? 'Edit Session Details' : 'Copy Session Details') : 'Session Details'}</Text>
       
       <View style={styles.form}>
         <Text style={styles.label}>Title</Text>
@@ -143,7 +147,7 @@ export default function SessionCreateScreen({ route, navigation }) {
       </View>
 
       <TouchableOpacity style={[styles.submitButton, { backgroundColor: '#2D52A2' }]} onPress={handleSubmit}>
-        <Text style={styles.submitText}>{isEditMode ? 'Save Changes' : 'Create Session'}</Text>
+        <Text style={styles.submitText}>{isPreFilled ? (isEditMode ? 'Save Changes' : 'Create Copy') : 'Create Session'}</Text>
       </TouchableOpacity>
     </View>
   );
