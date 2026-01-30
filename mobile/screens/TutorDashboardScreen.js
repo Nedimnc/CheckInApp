@@ -166,18 +166,14 @@ export default function TutorDashboardScreen({ navigation }) {
             <Text style={styles.emptyText}>No sessions posted yet.</Text>
           )}
 
-      </ScrollView>
+    </ScrollView>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity
-        style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
-        onPress={() => navigation.navigate('SessionCreate')}
-      >
-        <Ionicons name="add" size={30} color="white" />
-      </TouchableOpacity>
     </View>
   );
 }
+   
+
+
 
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, padding: 20, paddingBottom: 100 },
