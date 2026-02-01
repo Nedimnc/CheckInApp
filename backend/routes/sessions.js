@@ -187,4 +187,30 @@ router.put('/:session_id', async (req, res) => {
   }
 });
 
+// Student unbooks (cancels) their own session
+router.post('/:session_id/unbook', async (req, res) => {
+  const { session_id } = req.params;
+  const { student_id } = req.body;
+
+  try {
+    // Check if session exists and belongs to this student
+    const updateQuery = `
+      UPDATE sessions 
+      SET student_id = NULL, status = 'open' 
+      WHERE session_id = $1 AND student_id = $2
+      RETURNING *`;
+    
+    const result = await pool.query(updateQuery, [session_id, student_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "Session not found or you are not the booker" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;
