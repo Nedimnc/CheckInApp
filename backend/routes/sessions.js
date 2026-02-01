@@ -5,31 +5,48 @@ const pool = require('../db');
 
 // CREATE SESSION ROUTE
 router.post('/create', async (req, res) => {
-    console.log("Incoming Session Data:", req.body)
-    const { tutor_id, title, subject, start_time, end_time, location } = req.body;
+  console.log("Incoming Session Data:", req.body)
+  const { tutor_id, title, subject, start_time, end_time, location } = req.body;
 
-    try {
-        const newSession = await pool.query(
-            'INSERT INTO sessions (tutor_id, student_id, title, subject, start_time, end_time, location, status) VALUES ($1, NULL, $2, $3, $4, $5, $6, \'open\') RETURNING *',
-            [tutor_id, title, subject, start_time, end_time, location]
-        );
-        res.json(newSession.rows[0]);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
+  // Clean input start/end times
+  const cleanStart = new Date(start_time);
+  cleanStart.setSeconds(0, 0);
+  const cleanEnd = new Date(end_time);
+  cleanEnd.setSeconds(0, 0)
+
+  // Check for overlap with current tutor's sessions
+  try {
+    const overlapQuery = `
+            SELECT * FROM sessions 
+            WHERE tutor_id = $1 
+            AND NOT (end_time <= $2 OR start_time >= $3)`;
+    const overlapResult = await pool.query(overlapQuery, [tutor_id, cleanStart, cleanEnd]);
+    if (overlapResult.rows.length > 0) {
+      return res.status(400).json({ message: "You have another session that overlaps with this time." });
     }
+
+    // Insert the new session
+    const newSession = await pool.query(
+      'INSERT INTO sessions (tutor_id, student_id, title, subject, start_time, end_time, location, status) VALUES ($1, NULL, $2, $3, $4, $5, $6, \'open\') RETURNING *',
+      [tutor_id, title, subject, cleanStart, cleanEnd, location]
+    );
+    res.json(newSession.rows[0]);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // GET ALL SESSIONS ROUTE
 router.get('/fetch', async (req, res) => {
-    console.log("Fetching all sessions");
-    try {
-        const sessions = await pool.query('SELECT * FROM sessions');
-        res.json(sessions.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
+  console.log("Fetching all sessions");
+  try {
+    const sessions = await pool.query('SELECT * FROM sessions');
+    res.json(sessions.rows);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
 });
 
 // Student books a session
@@ -46,18 +63,39 @@ router.post('/:session_id/book', async (req, res) => {
       return res.status(404).json({ message: "Session not found" });
     }
     
-    // 2. Prevent double booking
+    // Clean input start/end times
+    const cleanStart = new Date(checkResult.rows[0].start_time);
+    cleanStart.setSeconds(0, 0);
+    const cleanEnd = new Date(checkResult.rows[0].end_time);
+    cleanEnd.setSeconds(0, 0);
+
+    // 2. Check if this session overlaps with student's other booked sessions
+    const overlapQuery = `
+      SELECT * FROM sessions 
+      WHERE student_id = $1 
+      AND status = 'booked'
+      AND NOT (end_time <= $2 OR start_time >= $3)`;
+
+    const overlapResult = await pool.query(overlapQuery, [
+      student_id, cleanStart, cleanEnd
+    ]);
+
+    if (overlapResult.rows.length > 0) {
+      return res.status(400).json({ message: "You have another session that overlaps with this time." });
+    }
+
+    // 3. Prevent double booking
     if (checkResult.rows[0].status === 'booked') {
       return res.status(400).json({ message: "This session has already been booked." });
     }
 
-    // 3. Update the session (assign student & change status)
+    // 4. Update the session (assign student & change status)
     const updateQuery = `
       UPDATE sessions 
       SET student_id = $1, status = 'booked' 
       WHERE session_id = $2 
       RETURNING *`;
-    
+
     const result = await pool.query(updateQuery, [student_id, session_id]);
 
     res.json(result.rows[0]);
@@ -97,9 +135,16 @@ router.delete('/:session_id', async (req, res) => {
   }
 });
 
+// Edit session details route
 router.put('/:session_id', async (req, res) => {
   const { session_id } = req.params;
   const { tutor_id, title, subject, location, start_time, end_time } = req.body;
+
+  // Clean input start/end times
+  const cleanStart = new Date(start_time);
+  cleanStart.setSeconds(0, 0);
+  const cleanEnd = new Date(end_time);
+  cleanEnd.setSeconds(0, 0);
 
   try {
     // 1. Verify ownership (Security Check)
@@ -113,15 +158,26 @@ router.put('/:session_id', async (req, res) => {
       return res.status(403).json({ message: "Unauthorized to edit this session" });
     }
 
-    // 2. Update the session
+    // 2. Check for overlap with current tutor's other sessions
+    const overlapQuery = `
+      SELECT * FROM sessions 
+      WHERE tutor_id = $1 
+      AND session_id != $4
+      AND NOT (end_time <= $2 OR start_time >= $3)`;
+    const overlapResult = await pool.query(overlapQuery, [tutor_id, cleanStart, cleanEnd, session_id]);
+    if (overlapResult.rows.length > 0) {
+      return res.status(400).json({ message: "You have another session that overlaps with this time." });
+    }
+
+    // 3. Update the session
     const updateQuery = `
       UPDATE sessions 
       SET title = $1, subject = $2, location = $3, start_time = $4, end_time = $5
       WHERE session_id = $6
       RETURNING *`;
-    
+
     const result = await pool.query(updateQuery, [
-      title, subject, location, start_time, end_time, session_id
+      title, subject, location, cleanStart, cleanEnd, session_id
     ]);
 
     res.json(result.rows[0]);
