@@ -1,18 +1,10 @@
 // routes/users.js
-const express = require('express');
-const router = express.Router();
-const pool = require('../db');
+import { Router } from 'express';
+import usersController from '../controllers/usersController.js';
 
-// GET ALL USERS ROUTE
-router.get('/fetch', async (req, res) => {
-    console.log("Fetching all users");
-    try {
-        const users = await pool.query('SELECT user_id, name, role, panther_id FROM users');
-        res.json(users.rows);
-    } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Server Error');
-    }
-});
+const router = Router();
 
-module.exports = router;
+// api/users/fetch -> Fetch All Users Route
+router.get('/fetch', usersController.fetchAllUsers);
+
+export default router;
