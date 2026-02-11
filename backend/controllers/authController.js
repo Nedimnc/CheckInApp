@@ -30,11 +30,15 @@ const login = async (req, res) => {
     return res.status(400).json({ message: 'Request body is required' });
   }
   const { email, password } = req.body;
+  console.log('Login attempt:', req.body);
   try {
     const user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+    console.log(user.rows);
+
     if (user.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     }
+    
     const validPassword = await bcrypt.compare(password, user.rows[0].password_hash);
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid Credentials' });

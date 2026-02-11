@@ -13,7 +13,7 @@ const api = axios.create({
 
 export const loginUser = async (email, password) => {
   try {
-    const response = await api.post('api/auth/login', { email, password });
+    const response = await api.post('/auth/login', { email, password });
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : { message: 'Network Error' };
