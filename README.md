@@ -1,6 +1,15 @@
 # CheckIn
 
-A mobile attendance and check-in system for Georgia State University students and tutors
+![Node.js](https://img.shields.io/badge/Node.js-43853D?logo=node.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express-000000?logo=express&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![Expo](https://img.shields.io/badge/Expo-000020?logo=expo&logoColor=white)
+![React Native](https://img.shields.io/badge/React%20Native-20232A?logo=react&logoColor=61DAFB)
+
+CheckIn is a mobile attendance and check-in system for Georgia State University students and tutors.
+It provides a lightweight workflow for creating tutoring sessions, booking appointments, and tracking attendance from a phone.
+The backend is a Node.js/Express API with a PostgreSQL database, while the mobile app runs on React Native with Expo for rapid development and on-device testing.
 
 ## Prerequisites
 All of these are required:
