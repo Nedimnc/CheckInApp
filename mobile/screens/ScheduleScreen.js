@@ -8,13 +8,13 @@ export default function ScheduleScreen({ navigation }) {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.header}>My Schedule</Text>
         
-        {/* Placeholder text until you have real sessions */}
+        {/* Placeholder text until tutor has real sessions */}
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>No upcoming sessions.</Text>
         </View>
       </ScrollView>
 
-      {/* --- THIS IS THE BUTTON --- */}
+      {}
       <TouchableOpacity 
         style={styles.fab} 
         onPress={() => navigation.navigate('SessionCreate')}

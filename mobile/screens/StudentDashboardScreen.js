@@ -76,6 +76,15 @@ export default function StudentDashboardScreen({ navigation }) {
       contentContainerStyle={styles.scrollContent}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
+      {/* ---  QR SCAN BUTTON  --- */}
+      <TouchableOpacity 
+        style={styles.scanButton} 
+        onPress={() => navigation.navigate('Scanner')}
+      >
+        <Ionicons name="qr-code-outline" size={24} color="white" />
+        <Text style={styles.scanButtonText}>Scan to Check In</Text>
+      </TouchableOpacity>
+
       <TextInput
         style={styles.input}
         placeholder="Search by course or tutor..."
@@ -188,5 +197,13 @@ const styles = StyleSheet.create({
     alignItems: 'center', marginTop: 15,
   },
   bookButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#888' }
+  emptyText: { textAlign: 'center', marginTop: 20, color: '#888' },
+
+  scanButton: { backgroundColor: '#2D52A2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18,
+    borderRadius: 15, marginBottom: 20, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2,
+    shadowRadius: 5,
+  },
+  
+  scanButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold', marginLeft: 10,
+  },
 });

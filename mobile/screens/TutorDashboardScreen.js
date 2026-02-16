@@ -135,7 +135,7 @@ export default function TutorDashboardScreen({ navigation }) {
                 <View style={styles.actionRow}>
                   <TouchableOpacity 
                     style={[styles.actionButton, styles.qrButton]}
-                    onPress={() => Alert.alert("Coming Soon", "QR Code generation...")}
+                    onPress={() => navigation.navigate('SessionQR', { session: session })}
                   >
                     <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
                     <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
@@ -215,5 +215,4 @@ const styles = StyleSheet.create({
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 30, fontSize: 16 },
-  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 }
 });
