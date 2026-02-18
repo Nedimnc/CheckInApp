@@ -87,4 +87,16 @@ export const updateSession = async (sessionId, sessionData) => {
   }
 };
 
+// Helper to unbook a session
+export const unbookSession = async (sessionId, studentId) => {
+  try {
+    const response = await api.post(`/sessions/${sessionId}/unbook`, { 
+      student_id: studentId 
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
 export default api;

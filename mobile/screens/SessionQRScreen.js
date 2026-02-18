@@ -29,7 +29,7 @@ export default function SessionQRScreen({ route, navigation }) {
         </View>
 
         <Text style={styles.instruction}>
-          Ask students to scan this code.
+          Ask student to scan this code.
         </Text>
       </View>
 

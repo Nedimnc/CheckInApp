@@ -1,38 +1,27 @@
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
-require('dotenv').config();
-const authRoutes = require('./routes/auth');
-const sessionsRoutes = require('./routes/sessions');
-const usersRoutes = require('./routes/users');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+
+import indexRoutes from './routes/index.js';
+
+dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Allows us to parse JSON bodies
-app.use('/api/auth', authRoutes);
-app.use('/api/sessions', sessionsRoutes);
-app.use('/api/users', usersRoutes);
-
-// Database Connection
-const pool = require('./db');
-
-// Test DB Connection
-pool.connect()
-  .then(() => console.log('Connected to PostgreSQL Database'))
-  .catch(err => console.error('Database connection error', err));
+app.use(express.json());
 
 // Basic Route
 app.get('/', (req, res) => {
   res.send('CheckIn API is running');
 });
 
-// Start Server
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${port}`);
-});
+// Routes
+app.use('/api', indexRoutes);
 
-// Export pool for use in other files later
-module.exports = pool;
+// Start Server
+app.listen(PORT, () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
+});

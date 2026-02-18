@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 // Added getUsers to imports
-import { getSessions, cancelSession, getUsers } from '../api'; 
+import { getSessions, cancelSession, getUsers } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 
 export default function TutorDashboardScreen({ navigation }) {
@@ -47,8 +47,8 @@ export default function TutorDashboardScreen({ navigation }) {
       "Are you sure you want to cancel this session? This cannot be undone.",
       [
         { text: "No", style: "cancel" },
-        { 
-          text: "Yes, Cancel", 
+        {
+          text: "Yes, Cancel",
           style: 'destructive',
           onPress: async () => {
             try {
@@ -64,7 +64,7 @@ export default function TutorDashboardScreen({ navigation }) {
     );
   };
 
-  if (loading) return <ActivityIndicator size="large" style={{marginTop: 50}} />;
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   return (
     <View style={{ flex: 1 }}>
@@ -73,7 +73,7 @@ export default function TutorDashboardScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
       >
         <Text style={styles.headerText}>Your Sessions</Text>
-        
+
         {sessions
           .filter((session) => session.tutor_id === user?.user_id)
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
@@ -84,7 +84,7 @@ export default function TutorDashboardScreen({ navigation }) {
 
             return (
               <View key={session.session_id} style={styles.sessionCard}>
-                
+
                 {/* Session Info */}
                 <View style={styles.cardHeader}>
                   <Text style={styles.subjectText}>{session.subject}</Text>
@@ -96,11 +96,11 @@ export default function TutorDashboardScreen({ navigation }) {
                 </View>
 
                 <Text style={styles.titleText}>{session.title}</Text>
-                
+
                 <View style={styles.infoRow}>
                   <Ionicons name="calendar-outline" size={16} color="#666" />
                   <Text style={styles.infoText}>
-                    {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                    {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
 
@@ -133,7 +133,7 @@ export default function TutorDashboardScreen({ navigation }) {
 
                 {/* ACTION BUTTONS */}
                 <View style={styles.actionRow}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.actionButton, styles.qrButton]}
                     onPress={() => navigation.navigate('SessionQR', { session: session })}
                   >
@@ -141,7 +141,20 @@ export default function TutorDashboardScreen({ navigation }) {
                     <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.copyButton]}
+                    onPress={() => {
+                      const { session_id, student_id, ...sessionCopy } = session;
+                      navigation.navigate('SessionCreate', {
+                        sessionToEdit: { ...sessionCopy, status: 'open' }
+                      });
+                    }}
+                  >
+                    <Ionicons name="copy-outline" size={18} color='#679968' />
+                    <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={[styles.actionButton, styles.editButton]}
                     onPress={() => navigation.navigate('SessionCreate', { sessionToEdit: session })}
                   >
@@ -149,7 +162,7 @@ export default function TutorDashboardScreen({ navigation }) {
                     <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[styles.actionButton, styles.cancelButton]}
                     onPress={() => handleCancelSession(session.session_id)}
                   >
@@ -161,17 +174,23 @@ export default function TutorDashboardScreen({ navigation }) {
               </View>
             );
           })}
-          
-          {sessions.filter(s => s.tutor_id === user?.user_id).length === 0 && (
-            <Text style={styles.emptyText}>No sessions posted yet.</Text>
-          )}
 
-    </ScrollView>
+        {sessions.filter(s => s.tutor_id === user?.user_id).length === 0 && (
+          <Text style={styles.emptyText}>No sessions posted yet.</Text>
+        )}
 
+      </ScrollView>
+      {/* Floating Add Button */}
+      <TouchableOpacity
+        style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
+        onPress={() => navigation.navigate('SessionCreate')}
+      >
+        <Ionicons name="add" size={30} color="white" />
+      </TouchableOpacity>
     </View>
   );
 }
-   
+
 
 
 
@@ -181,11 +200,11 @@ const styles = StyleSheet.create({
   sessionCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   subjectText: { fontSize: 18, fontWeight: 'bold', color: '#2D52A2' },
-  
+
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   openBadge: { backgroundColor: '#E3F2FD' },
   bookedBadge: { backgroundColor: '#E8F5E9' },
-  
+
   statusText: { fontSize: 12, fontWeight: '600' },
   openText: { color: '#1976D2' },
   bookedText: { color: '#2E7D32' },
@@ -193,7 +212,7 @@ const styles = StyleSheet.create({
   titleText: { fontSize: 16, color: '#333', marginBottom: 12 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   infoText: { marginLeft: 8, color: '#555', fontSize: 14 },
-  
+
 
   studentInfoBox: {
     marginTop: 15,
@@ -208,11 +227,13 @@ const styles = StyleSheet.create({
   studentName: { marginLeft: 8, fontWeight: 'bold', color: '#333' },
   studentId: { marginLeft: 8, color: '#666', fontSize: 12 },
 
-  actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 10 },
+  actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'space-between', gap: 10 },
   actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1 },
   qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },
+  copyButton: { borderColor: '#87c788', backgroundColor: '#f5fff5' },
   editButton: { borderColor: '#FFE0B2', backgroundColor: '#FFF3E0' },
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 30, fontSize: 16 },
+  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 });

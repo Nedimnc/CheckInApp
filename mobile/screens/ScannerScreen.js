@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, StyleSheet, Button, Alert, TouchableOpacity } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 
 export default function ScannerScreen({ navigation }) {
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
+  const isScanning = useRef(false);
 
   useEffect(() => {
     const getCameraPermissions = async () => {
@@ -16,23 +17,36 @@ export default function ScannerScreen({ navigation }) {
   }, []);
 
   const handleBarCodeScanned = ({ type, data }) => {
+    if (isScanning.current) return; // Prevent multiple scans
+    isScanning.current = true;
     setScanned(true);
     try {
-        // 1. Read the data from the QR Code
-        const sessionData = JSON.parse(data);
-        
-        // 2. Show what we found (This is just a test for now)
-        Alert.alert(
-            "Code Found!", 
-            `Session ID: ${sessionData.session_id}`,
-            [
-                { text: "OK", onPress: () => setScanned(false) },
-                { text: "Done", onPress: () => navigation.goBack() }
-            ]
-        );
+      // 1. Read the data from the QR Code
+      const sessionData = JSON.parse(data);
+
+      // 2. Show what we found (This is just a test for now)
+      Alert.alert(
+        "Code Found!",
+        `Session ID: ${sessionData.session_id}`,
+        [
+          {
+            text: "OK", onPress: () => {
+              isScanning.current = false;
+              setScanned(false);
+            }
+          },
+          { text: "Done", onPress: () => navigation.goBack() }
+        ]
+      );
     } catch (error) {
-        Alert.alert("Invalid Code", "That doesn't look like a class QR code.");
-        setScanned(false);
+      Alert.alert("Invalid Code", "That doesn't look like a class QR code.", [
+        {
+          text: "Try Again", onPress: () => {
+            isScanning.current = false;
+            setScanned(false);
+          }
+        }
+      ]);
     }
   };
 
@@ -52,7 +66,7 @@ export default function ScannerScreen({ navigation }) {
         }}
         style={StyleSheet.absoluteFillObject}
       />
-      
+
       {/* Overlay to guide the user */}
       <View style={styles.overlay}>
         <View style={styles.scanBox} />
