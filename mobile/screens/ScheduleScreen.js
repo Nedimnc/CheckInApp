@@ -33,7 +33,8 @@ export default function Schedule({ navigation }) {
 
       const relevantSessions = sessionsData.filter(session =>
         session.student_id === user.user_id ||
-        (session.tutor_id === user.user_id && session.status === 'booked')
+        // Include 'checked_in' so they don't disappear from tutor's calendar
+        (session.tutor_id === user.user_id && (session.status === 'booked' || session.status === 'checked_in'))
       );
 
       setMySessions(relevantSessions);
@@ -128,12 +129,20 @@ export default function Schedule({ navigation }) {
     const counterpartLabel = isImTheTutor ? "Student" : "Tutor";
     const counterpartName = users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
     const isPast = new Date(session.start_time) < new Date();
+    const isCheckedIn = session.status === 'checked_in'; 
 
     return (
       <View key={session.session_id} style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard]}>
         <View style={styles.headerRow}>
           <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}</Text>
-          {!isPast && <View style={styles.badge}><Text style={styles.badgeText}>CONFIRMED</Text></View>}
+          {/* Swap between Confirmed and Checked In */}
+          {!isPast && (
+            isCheckedIn ? (
+              <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
+            ) : (
+              <View style={styles.badge}><Text style={styles.badgeText}>CONFIRMED</Text></View>
+            )
+          )}
         </View>
 
         <Text style={[styles.title, isPast && styles.pastText]}>{session.title}</Text>
@@ -157,8 +166,8 @@ export default function Schedule({ navigation }) {
           <Text style={[styles.info, isPast && styles.pastText]}>{session.location}</Text>
         </View>
 
-        {/* ACTION BUTTONS ROW */}
-        {!isPast && (
+        {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
+        {!isPast && !isCheckedIn && (
           <View style={styles.actionRow}>
 
             {/* IF I AM THE TUTOR */}
@@ -269,12 +278,16 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   subject: { fontSize: 16, fontWeight: 'bold', color: '#2D52A2' },
   title: { fontSize: 15, fontWeight: '600', marginBottom: 10, color: '#1F2937' },
+  
   badge: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   badgeText: { fontSize: 10, fontWeight: 'bold', color: '#1976D2' },
+  
+  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  badgeTextPurple: { fontSize: 10, fontWeight: 'bold', color: '#5B21B6' },
+
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   info: { marginLeft: 8, fontSize: 14, color: '#555' },
   pastText: { color: '#9CA3AF' },
-
 
   actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1 },

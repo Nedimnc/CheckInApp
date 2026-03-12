@@ -99,4 +99,25 @@ export const unbookSession = async (sessionId, studentId) => {
   }
 };
 
-export default api;
+// Fetch the secure JWT for the Tutor's screen 
+export const getQRToken = async (sessionId) => {
+  try {
+    const response = await api.get(`/sessions/${sessionId}/qrcode`);
+    return response.data.token;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Student sends the scanned JWT to the backend to check in
+export const checkinSession = async (token, studentId) => {
+  try {
+    const response = await api.post(`/sessions/checkin`, { 
+      token: token,
+      student_id: studentId 
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

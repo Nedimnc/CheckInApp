@@ -78,6 +78,7 @@ export default function StudentDashboardScreen({ navigation }) {
         { text: "No", style: "cancel" },
         {
           text: "Yes, Unbook", style: 'destructive',
+
           onPress: async () => {
             try {
               await unbookSession(session.session_id, user.user_id);
@@ -117,15 +118,22 @@ export default function StudentDashboardScreen({ navigation }) {
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
           .map((session) => {
             const isMyBooking = session.student_id === user.user_id;
-            const isBookedByOther = session.status === 'booked' && !isMyBooking;
+            const isCheckedIn = session.status === 'checked_in'; // Check if checked in
+            // Consider it booked by other if it's booked OR checked in by someone else
+            const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isMyBooking; 
 
             return (
               <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard]}>
                 <View style={styles.headerRow}>
                   <Text style={styles.subjectTitle}>{session.subject}: {session.title}</Text>
 
+                  {/* UPDATED: Badge rendering logic */}
                   {isMyBooking ? (
-                    <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>Booked by You</Text></View>
+                    isCheckedIn ? (
+                      <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>Checked In ✓</Text></View>
+                    ) : (
+                      <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>Booked by You</Text></View>
+                    )
                   ) : isBookedByOther ? (
                     <View style={styles.badgeGray}><Text style={styles.badgeTextGray}>Unavailable</Text></View>
                   ) : (
@@ -161,8 +169,8 @@ export default function StudentDashboardScreen({ navigation }) {
 
                 {/* ACTION BUTTON AREA */}
 
-                {/* 1. If I booked it: Show Compact Scan & Unbook buttons (Right Aligned) */}
-                {isMyBooking && (
+                {/* UPDATED: Only show Scan & Unbook if they haven't checked in yet */}
+                {isMyBooking && !isCheckedIn && (
                   <View style={styles.actionRow}>
                     <TouchableOpacity
                       style={[styles.actionButton, styles.qrButton]}
@@ -241,6 +249,9 @@ const styles = StyleSheet.create({
 
   badgeGray: { backgroundColor: '#EEEEEE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   badgeTextGray: { color: '#9E9E9E', fontSize: 12, fontWeight: 'bold' },
+
+  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  badgeTextPurple: { color: '#5B21B6', fontSize: 12, fontWeight: 'bold' },
 
 
   bookButton: {

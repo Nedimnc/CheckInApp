@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, View, StyleSheet, Button, Alert, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import { Text, View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
+import { checkinSession } from '../api'; // Import our API call
+import { AuthContext } from '../context/AuthContext'; // Import Auth to get student ID
 
 export default function ScannerScreen({ navigation }) {
+  const { user } = useContext(AuthContext); // Get the logged-in student
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
   const isScanning = useRef(false);
@@ -12,62 +15,60 @@ export default function ScannerScreen({ navigation }) {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     };
-
     getCameraPermissions();
   }, []);
 
-  const handleBarCodeScanned = ({ type, data }) => {
+  // Async so we can await the API call
+  const handleBarCodeScanned = async ({ type, data }) => {
     if (isScanning.current) return; // Prevent multiple scans
     isScanning.current = true;
     setScanned(true);
-    try {
-      // 1. Read the data from the QR Code
-      const sessionData = JSON.parse(data);
 
-      // 2. Show what we found (This is just a test for now)
+    try {
+      // 1. The data from the QR Code is the secure JWT token
+      const token = data; 
+      
+      // Safety check: Make sure it's not empty
+      if (!token) {
+        throw new Error("Invalid QR Code.");
+      }
+
+      // 2. Hit the backend to securely check them in
+      await checkinSession(token, user.user_id);
+
+      // 3. Show message and go back to dashboard
       Alert.alert(
-        "Code Found!",
-        `Session ID: ${sessionData.session_id}`,
-        [
-          {
-            text: "OK", onPress: () => {
-              isScanning.current = false;
-              setScanned(false);
-            }
-          },
-          { text: "Done", onPress: () => navigation.goBack() }
-        ]
+        "Check-In Successful!",
+        "You have been securely checked into your tutoring session.",
+        [{ text: "Done", onPress: () => navigation.goBack() }]
       );
+
     } catch (error) {
-      Alert.alert("Invalid Code", "That doesn't look like a class QR code.", [
+      // 4. Failure (Not booked, expired token, etc.)
+      const errorMsg = error.message || "Could not check in. Please try again.";
+      Alert.alert("Check-In Failed", errorMsg, [
         {
           text: "Try Again", onPress: () => {
             isScanning.current = false;
             setScanned(false);
           }
-        }
+        },
+        { text: "Cancel", onPress: () => navigation.goBack(), style: 'cancel' }
       ]);
     }
   };
 
-  if (hasPermission === null) {
-    return <Text>Requesting camera permission...</Text>;
-  }
-  if (hasPermission === false) {
-    return <Text>No access to camera</Text>;
-  }
+  if (hasPermission === null) return <Text>Requesting camera permission...</Text>;
+  if (hasPermission === false) return <Text>No access to camera</Text>;
 
   return (
     <View style={styles.container}>
       <CameraView
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-        barcodeScannerSettings={{
-          barcodeTypes: ["qr"],
-        }}
+        barcodeScannerSettings={{ barcodeTypes: ["qr"] }}
         style={StyleSheet.absoluteFillObject}
       />
 
-      {/* Overlay to guide the user */}
       <View style={styles.overlay}>
         <View style={styles.scanBox} />
         <Text style={styles.instruction}>Scan the Tutor's QR Code</Text>
