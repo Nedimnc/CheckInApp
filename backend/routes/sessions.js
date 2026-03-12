@@ -22,4 +22,10 @@ router.put('/:session_id', sessionsController.updateSession);
 // api/sessions/:session_id/unbook -> Unbook Session Route
 router.post('/:session_id/unbook', sessionsController.unbookSession);
 
+// api/sessions/:session_id/qrcode -> Generate secure token for Tutor's QR screen
+router.get('/:session_id/qrcode', sessionsController.generateQRToken);
+
+// api/sessions/checkin -> Student Check-In Route (Securely reads the token)
+router.post('/checkin', sessionsController.checkinSession);
+
 export default router;

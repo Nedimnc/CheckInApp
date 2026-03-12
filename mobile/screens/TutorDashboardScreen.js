@@ -81,6 +81,7 @@ export default function TutorDashboardScreen({ navigation }) {
             // Find the student if one is assigned
             const student = session.student_id ? users.find(u => u.user_id === session.student_id) : null;
             const isBooked = session.status === 'booked';
+            const isCheckedIn = session.status === 'checked_in'; // <-- ADDED THIS
 
             return (
               <View key={session.session_id} style={styles.sessionCard}>
@@ -88,9 +89,10 @@ export default function TutorDashboardScreen({ navigation }) {
                 {/* Session Info */}
                 <View style={styles.cardHeader}>
                   <Text style={styles.subjectText}>{session.subject}</Text>
-                  <View style={[styles.statusBadge, isBooked ? styles.bookedBadge : styles.openBadge]}>
-                    <Text style={[styles.statusText, isBooked ? styles.bookedText : styles.openText]}>
-                      {session.status || 'Open'}
+                  {/* UPDATED BADGE LOGIC */}
+                  <View style={[styles.statusBadge, isCheckedIn ? styles.checkedInBadge : (isBooked ? styles.bookedBadge : styles.openBadge)]}>
+                    <Text style={[styles.statusText, isCheckedIn ? styles.checkedInText : (isBooked ? styles.bookedText : styles.openText)]}>
+                      {isCheckedIn ? 'Checked In ✓' : (isBooked ? 'Booked' : 'Open')}
                     </Text>
                   </View>
                 </View>
@@ -116,8 +118,8 @@ export default function TutorDashboardScreen({ navigation }) {
                   <Text style={styles.infoText}>{session.location}</Text>
                 </View>
 
-                {/* NEW: Student Info Section (Only visible if Booked) */}
-                {isBooked && student && (
+                {/* UPDATED: Student Info Section (Visible if Booked OR Checked In) */}
+                {(isBooked || isCheckedIn) && student && (
                   <View style={styles.studentInfoBox}>
                     <Text style={styles.studentLabel}>Booked Student:</Text>
                     <View style={styles.studentRow}>
@@ -135,7 +137,7 @@ export default function TutorDashboardScreen({ navigation }) {
                 <View style={styles.actionRow}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.qrButton]}
-                    onPress={() => Alert.alert("Coming Soon", "QR Code generation...")}
+                    onPress={() => navigation.navigate('SessionQR', { session: session })}
                   >
                     <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
                     <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
@@ -145,7 +147,8 @@ export default function TutorDashboardScreen({ navigation }) {
                     style={[styles.actionButton, styles.copyButton]}
                     onPress={() => {
                       const { session_id, student_id, ...sessionCopy } = session;
-                      navigation.navigate('SessionCreate', { sessionToEdit: { ...sessionCopy, status: 'open' }
+                      navigation.navigate('SessionCreate', {
+                        sessionToEdit: { ...sessionCopy, status: 'open' }
                       });
                     }}
                   >
@@ -179,7 +182,6 @@ export default function TutorDashboardScreen({ navigation }) {
         )}
 
       </ScrollView>
-
       {/* Floating Add Button */}
       <TouchableOpacity
         style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
@@ -191,6 +193,7 @@ export default function TutorDashboardScreen({ navigation }) {
   );
 }
 
+
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, padding: 20, paddingBottom: 100 },
   headerText: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, color: '#333' },
@@ -201,15 +204,16 @@ const styles = StyleSheet.create({
   statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   openBadge: { backgroundColor: '#E3F2FD' },
   bookedBadge: { backgroundColor: '#E8F5E9' },
+  checkedInBadge: { backgroundColor: '#EDE9FE' }, 
 
   statusText: { fontSize: 12, fontWeight: '600' },
   openText: { color: '#1976D2' },
   bookedText: { color: '#2E7D32' },
+  checkedInText: { color: '#5B21B6' }, 
 
   titleText: { fontSize: 16, color: '#333', marginBottom: 12 },
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   infoText: { marginLeft: 8, color: '#555', fontSize: 14 },
-
 
   studentInfoBox: {
     marginTop: 15,
@@ -232,5 +236,5 @@ const styles = StyleSheet.create({
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
   emptyText: { textAlign: 'center', color: '#999', marginTop: 30, fontSize: 16 },
-  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 }
+  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
 });

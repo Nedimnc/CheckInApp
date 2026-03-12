@@ -31,9 +31,10 @@ export default function Schedule({ navigation }) {
         getUsers()
       ]);
 
-      const relevantSessions = sessionsData.filter(session => 
-        session.student_id === user.user_id || 
-        (session.tutor_id === user.user_id && session.status === 'booked')
+      const relevantSessions = sessionsData.filter(session =>
+        session.student_id === user.user_id ||
+        // Include 'checked_in' so they don't disappear from tutor's calendar
+        (session.tutor_id === user.user_id && (session.status === 'booked' || session.status === 'checked_in'))
       );
 
       setMySessions(relevantSessions);
@@ -65,10 +66,10 @@ export default function Schedule({ navigation }) {
     setSelectedDate(day.dateString);
     const newMarks = { ...markedDates };
     Object.keys(newMarks).forEach(key => {
-        if (newMarks[key].selected) {
-            delete newMarks[key].selected;
-            delete newMarks[key].selectedColor;
-        }
+      if (newMarks[key].selected) {
+        delete newMarks[key].selected;
+        delete newMarks[key].selectedColor;
+      }
     });
     newMarks[day.dateString] = { ...newMarks[day.dateString], selected: true, selectedColor: '#2D52A2' };
     setMarkedDates(newMarks);
@@ -82,7 +83,7 @@ export default function Schedule({ navigation }) {
       "Are you sure? This will delete the session entirely.",
       [
         { text: "No", style: "cancel" },
-        { 
+        {
           text: "Yes, Cancel", style: 'destructive',
           onPress: async () => {
             try {
@@ -104,7 +105,7 @@ export default function Schedule({ navigation }) {
       "Do you want to cancel your booking? The slot will become open for others.",
       [
         { text: "No", style: "cancel" },
-        { 
+        {
           text: "Yes, Unbook", style: 'destructive',
           onPress: async () => {
             try {
@@ -121,23 +122,31 @@ export default function Schedule({ navigation }) {
   };
 
   const daySessions = mySessions.filter(s => s.start_time.startsWith(selectedDate));
-  
+
   const renderSessionCard = (session) => {
     const isImTheTutor = session.tutor_id === user.user_id;
     const counterpartId = isImTheTutor ? session.student_id : session.tutor_id;
     const counterpartLabel = isImTheTutor ? "Student" : "Tutor";
     const counterpartName = users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
     const isPast = new Date(session.start_time) < new Date();
+    const isCheckedIn = session.status === 'checked_in'; 
 
     return (
       <View key={session.session_id} style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard]}>
         <View style={styles.headerRow}>
           <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}</Text>
-          {!isPast && <View style={styles.badge}><Text style={styles.badgeText}>CONFIRMED</Text></View>}
+          {/* Swap between Confirmed and Checked In */}
+          {!isPast && (
+            isCheckedIn ? (
+              <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
+            ) : (
+              <View style={styles.badge}><Text style={styles.badgeText}>CONFIRMED</Text></View>
+            )
+          )}
         </View>
-        
+
         <Text style={[styles.title, isPast && styles.pastText]}>{session.title}</Text>
-        
+
         <View style={styles.row}>
           <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
           <Text style={[styles.info, isPast && styles.pastText]}>
@@ -157,22 +166,22 @@ export default function Schedule({ navigation }) {
           <Text style={[styles.info, isPast && styles.pastText]}>{session.location}</Text>
         </View>
 
-        {/* ACTION BUTTONS ROW */}
-        {!isPast && (
+        {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
+        {!isPast && !isCheckedIn && (
           <View style={styles.actionRow}>
-            
+
             {/* IF I AM THE TUTOR */}
             {isImTheTutor ? (
               <>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.actionButton, styles.qrButton]}
-                  onPress={() => Alert.alert("QR Code", "Show this to student to scan.")}
+                  onPress={() => navigation.navigate('SessionQR', { session: session })}
                 >
                   <Ionicons name="qr-code-outline" size={16} color="#2D52A2" />
-                  <Text style={[styles.actionText, { color: '#2D52A2' }]}>Show QR</Text>
+                  <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.actionButton, styles.editButton]}
                   onPress={() => navigation.navigate('SessionCreate', { sessionToEdit: session })}
                 >
@@ -180,7 +189,7 @@ export default function Schedule({ navigation }) {
                   <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.actionButton, styles.cancelButton]}
                   onPress={() => handleTutorCancel(session.session_id)}
                 >
@@ -191,15 +200,15 @@ export default function Schedule({ navigation }) {
             ) : (
               /* IF I AM THE STUDENT */
               <>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.actionButton, styles.qrButton]}
-                  onPress={() => Alert.alert("Scanner", "Camera scanner coming soon!")}
+                  onPress={() => navigation.navigate('Scanner')}
                 >
                   <Ionicons name="scan-outline" size={16} color="#2D52A2" />
                   <Text style={[styles.actionText, { color: '#2D52A2' }]}>Scan QR</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[styles.actionButton, styles.cancelButton]}
                   onPress={() => handleStudentUnbook(session.session_id)}
                 >
@@ -217,7 +226,7 @@ export default function Schedule({ navigation }) {
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 50 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -241,9 +250,9 @@ export default function Schedule({ navigation }) {
         <Text style={styles.sectionTitle}>
           Sessions for {new Date(selectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
         </Text>
-        
+
         {daySessions.length > 0 ? (
-          daySessions.sort((a,b) => new Date(a.start_time) - new Date(b.start_time)).map(renderSessionCard)
+          daySessions.sort((a, b) => new Date(a.start_time) - new Date(b.start_time)).map(renderSessionCard)
         ) : (
           <View style={styles.emptyContainer}>
             <Ionicons name="calendar-clear-outline" size={40} color="#CCC" />
@@ -269,13 +278,17 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   subject: { fontSize: 16, fontWeight: 'bold', color: '#2D52A2' },
   title: { fontSize: 15, fontWeight: '600', marginBottom: 10, color: '#1F2937' },
+  
   badge: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
   badgeText: { fontSize: 10, fontWeight: 'bold', color: '#1976D2' },
+  
+  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  badgeTextPurple: { fontSize: 10, fontWeight: 'bold', color: '#5B21B6' },
+
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   info: { marginLeft: 8, fontSize: 14, color: '#555' },
   pastText: { color: '#9CA3AF' },
 
-  
   actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1 },
   qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },

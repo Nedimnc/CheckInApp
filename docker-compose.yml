@@ -11,7 +11,7 @@ services:
       POSTGRES_DB: checkin_db
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - ./backend/data/database.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
