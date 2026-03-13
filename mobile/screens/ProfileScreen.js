@@ -1,15 +1,42 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getStudentStats, getTutorStats } from '../api';
 import { BarChart } from "react-native-gifted-charts";
+import { useIsFocused } from '@react-navigation/native';
 
 export default function Profile({ navigation }) {
   const { user } = useContext(AuthContext);
   const [stats, setStats] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const isFocused = useIsFocused();
 
   useEffect(() => {
+      if (isFocused) {
+        loadStats();
+      }
+    }, [isFocused]);
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    const fetchStats = user.role === 'student' ? getStudentStats : getTutorStats;
+    fetchStats(user.user_id).then((data) => {
+      if (user.role === 'student') {
+        const chartData = data.monthlyBreakdown?.map(item => ({
+          value: parseFloat(item.hours_count) || 0,
+          label: item.month_label,
+          frontColor: '#177AD5',
+        }));
+        setStats({ ...data.summary, chartData });
+      } else {
+        setStats(data);
+      }
+      setRefreshing(false);
+    });
+  };
+
+  const loadStats = () => {
     if (!user.user_id) return;
     getStudentStats(user.user_id).then((data) => {
       const chartData = data.monthlyBreakdown?.map(item => ({
@@ -19,10 +46,10 @@ export default function Profile({ navigation }) {
       }));
       setStats({ ...data.summary, chartData });
     });
-  }, [user.user_id]);
+  };
 
   return (
-    <ScrollView style={styles.content}>
+    <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
           <Ionicons name='person' size='52' color='white' />

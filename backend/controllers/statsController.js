@@ -4,8 +4,8 @@ import { pool } from '../config/database.js';
 export const fetchStudentStats = async (req, res) => {
     const { userID } = req.params;
     try {
-        const totalStatsQuery = "SELECT COUNT(session_id) AS total_sessions, COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600), 0) AS total_hours FROM sessions WHERE student_id = $1;";
-        const monthlyStatsQuery = "SELECT month_label, hours_count FROM (SELECT TO_CHAR(start_time, 'Mon') AS month_label, TO_CHAR(start_time, 'YYYY-MM') AS month_sort, COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600), 0) AS hours_count FROM sessions WHERE student_id = $1 GROUP BY month_label, month_sort ORDER BY month_sort DESC LIMIT 4) AS recent_months ORDER BY month_sort ASC;";
+        const totalStatsQuery = "SELECT COUNT(session_id) AS total_sessions, COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600), 0) AS total_hours FROM sessions WHERE student_id = $1 AND status = 'checked_in';";
+        const monthlyStatsQuery = "SELECT month_label, hours_count FROM (SELECT TO_CHAR(start_time, 'Mon') AS month_label, TO_CHAR(start_time, 'YYYY-MM') AS month_sort, COALESCE(SUM(EXTRACT(EPOCH FROM (end_time - start_time)) / 3600), 0) AS hours_count FROM sessions WHERE student_id = $1 AND status = 'checked_in' GROUP BY month_label, month_sort ORDER BY month_sort DESC LIMIT 4) AS recent_months ORDER BY month_sort ASC;";
         const [totalResult, monthlyResult] = await Promise.all([
             pool.query(totalStatsQuery, [userID]),
             pool.query(monthlyStatsQuery, [userID])
