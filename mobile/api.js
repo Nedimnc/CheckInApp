@@ -121,3 +121,21 @@ export const checkinSession = async (token, studentId) => {
     throw error.response?.data || error.message;
   }
 };
+
+export const getStudentStats = async (userID) => {
+  try {
+    const response = await api.get(`/stats/student/${userID}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getTutorStats = async (userID) => {
+  try {
+    const response = await api.get(`/stats/tutor/${userID}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
