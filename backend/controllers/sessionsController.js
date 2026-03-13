@@ -69,7 +69,7 @@ export const bookSession = async (req, res) => {
     const overlapQuery = `
       SELECT * FROM sessions 
       WHERE student_id = $1 
-      AND status = 'booked'
+      AND status IN ('booked', 'checked_in')
       AND NOT (end_time <= $2 OR start_time >= $3)`;
 
     const overlapResult = await pool.query(overlapQuery, [
