@@ -2,7 +2,12 @@
 import { Router } from 'express';
 import sessionsController from '../controllers/sessionsController.js';
 
+// Import authentication middleware
+import authenticateToken from '../middleware/authMiddleware.js';
+
 const router = Router();
+
+router.use(authenticateToken); // Apply authentication middleware to all session routes below this line
 
 // api/sessions/create -> Create Session Route
 router.post('/create', sessionsController.createSession);

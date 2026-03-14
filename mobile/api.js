@@ -1,6 +1,7 @@
 // mobile/api.js
 import axios from 'axios';
 import config from './config'; // Import the local config
+import * as SecureStore from 'expo-secure-store';
 
 const BASE_URL = config.API_URL; // Use the URL from the config file
 
@@ -11,9 +12,27 @@ const api = axios.create({
   },
 });
 
+// Request interceptor to include the token in all requests
+api.interceptors.request.use(
+  async (axiosConfig) => {
+    const token = await SecureStore.getItemAsync('userToken');
+    if (token) {
+      axiosConfig.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.log('No token found in SecureStore');
+    }
+    return axiosConfig;
+  }, (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const loginUser = async (email, password) => {
   try {
     const response = await api.post('/auth/login', { email, password });
+    if (response.data.token) {
+      await SecureStore.setItemAsync('userToken', response.data.token);
+    }
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : { message: 'Network Error' };

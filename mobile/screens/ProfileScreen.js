@@ -1,7 +1,10 @@
+import React, { useContext } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Profile({ navigation }) {
-  
+  const { logout } = useContext(AuthContext);
+
   return (
     <View style={styles.scrollContent}>
       <View style={styles.topContent}>
@@ -10,7 +13,7 @@ export default function Profile({ navigation }) {
       <View style={styles.bottomContent}>
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => navigation.replace('Login')}
+          onPress={logout}
         >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
