@@ -1,4 +1,5 @@
 import { pool } from '../config/database.js';
+import jwt from 'jsonwebtoken';
 
 // Create session controller
 export const createSession = async (req, res) => {
@@ -208,6 +209,63 @@ export const unbookSession = async (req, res) => {
   }
 };
 
+// Generate Secure QR Token (SCRUM-21)
+export const generateQRToken = async (req, res) => {
+  const { session_id } = req.params;
+  try {
+    // Create a secure token that expires in 15 minutes
+    const token = jwt.sign(
+      { session_id: session_id }, 
+      process.env.JWT_SECRET || 'super_secret_key', 
+      { expiresIn: '15m' }
+    );
+    res.json({ token });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+// Check-in session controller (QR Validation using JWT)
+export const checkinSession = async (req, res) => {
+  const { token, student_id } = req.body;
+
+  try {
+    // 1. Verify the "wax seal" on the token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key');
+    const session_id = decoded.session_id;
+
+    // 2. Check if session exists
+    const checkQuery = 'SELECT * FROM sessions WHERE session_id = $1';
+    const checkResult = await pool.query(checkQuery, [session_id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    const session = checkResult.rows[0];
+
+    // 3. Security Check: Is this the student who actually booked it?
+    if (session.student_id !== student_id) {
+      return res.status(403).json({ message: "Authentication failed: You are not booked for this session." });
+    }
+
+    // 4. Mark as checked in
+    const updateQuery = `
+      UPDATE sessions 
+      SET status = 'checked_in' 
+      WHERE session_id = $1 
+      RETURNING *`;
+    
+    const result = await pool.query(updateQuery, [session_id]);
+
+    res.json({ message: "Check-in successful!", session: result.rows[0] });
+  } catch (err) {
+    // If the token is expired, tampered with, or fake, it drops down here
+    console.error("JWT Error:", err.message);
+    return res.status(400).json({ message: "Invalid or expired QR code. Please ask the tutor to refresh." });
+  }
+};
 
 export default {
   createSession,
@@ -215,5 +273,7 @@ export default {
   bookSession,
   cancelSession,
   updateSession,
-  unbookSession
+  unbookSession,
+  checkinSession,
+  generateQRToken 
 };

@@ -4,6 +4,7 @@ import { Router } from 'express';
 import usersRoutes from './users.js';
 import authRoutes from './auth.js';
 import sessionsRoutes from './sessions.js';
+import statRoutes from './stats.js'
 
 const router = Router();
 
@@ -15,5 +16,8 @@ router.use('/users', usersRoutes);
 
 // /api/sessions -> sessionsRoutes
 router.use('/sessions', sessionsRoutes);
+
+// /api/stats -> statsRoutes
+router.use('/stats', statRoutes);
 
 export default router;

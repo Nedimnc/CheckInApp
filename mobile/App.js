@@ -13,6 +13,8 @@ import TutorDashboardScreen from './screens/TutorDashboardScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 import SessionCreateScreen from './screens/SessionCreateScreen';
+import SessionQRScreen from './screens/SessionQRScreen';
+import ScannerScreen from './screens/ScannerScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -71,6 +73,8 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
             <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerTitle: '' }} />
+            <Stack.Screen name="SessionQR" component={SessionQRScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false, presentation: 'modal' }}  />
             <Stack.Screen
               name="MainTabs"
               component={MyTabs}
