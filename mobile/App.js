@@ -87,7 +87,9 @@ function RootNavigation() {
         ) : (
           <Stack.Group>
             <Stack.Screen name="MainTabs" component={MyTabs} initialParams={{ role: user.role }} options={{ headerShown: false }} />
-            <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerTitle: 'Create Session' }} />
+            <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="SessionQR" component={SessionQRScreen} options={{ headerShown: false, presentation: 'modal' }} />
+            <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false, presentation: 'modal' }} />
           </Stack.Group>
         )}
       </Stack.Navigator>

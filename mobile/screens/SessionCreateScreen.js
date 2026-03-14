@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   headerText: { fontSize: 26, fontWeight: 'bold', color: '#111827', marginBottom: 20 },
   label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 6 },
   input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 12, marginBottom: 20, fontSize: 16 },
-  submitButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 20 },
+  submitButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 20, marginBottom: 50 },
   submitText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   form: { flex: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
