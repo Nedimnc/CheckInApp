@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, AuthContext } from './context/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
 
 // Import Screens
 import LoginScreen from './screens/LoginScreen';
@@ -64,24 +65,40 @@ function MyTabs({ route }) {
   );
 };
 
+function RootNavigation() {
+  const { user, isLoading } = useContext(AuthContext);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#2D52A2" />
+      </View>
+    );
+  }
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        {user == null ? (
+          <Stack.Group>
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+          </Stack.Group>
+        ) : (
+          <Stack.Group>
+            <Stack.Screen name="MainTabs" component={MyTabs} initialParams={{ role: user.role }} options={{ headerShown: false }} />
+            <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerTitle: 'Create Session' }} />
+          </Stack.Group>
+        )}
+      </Stack.Navigator>
+    </NavigationContainer >
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Login">
-          <Stack.Group>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Register" component={RegisterScreen} />
-            <Stack.Screen name="SessionCreate" component={SessionCreateScreen} options={{ headerTitle: '' }} />
-            <Stack.Screen name="SessionQR" component={SessionQRScreen} options={{ headerShown: false, presentation: 'modal' }} />
-            <Stack.Screen name="Scanner" component={ScannerScreen} options={{ headerShown: false, presentation: 'modal' }}  />
-            <Stack.Screen
-              name="MainTabs"
-              component={MyTabs}
-              options={{ title: 'Back', headerShown: false }} />
-          </Stack.Group>
-        </Stack.Navigator>
-      </NavigationContainer>
+      <RootNavigation />
     </AuthProvider>
   );
 }

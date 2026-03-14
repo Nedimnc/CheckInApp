@@ -10,17 +10,14 @@ export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { setUser } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (role) => {
     try {
-      const user = await loginUser(email, password);
-      setUser(user);
-      Alert.alert('Success', `Welcome back, ${user.name}!`);
-      // Later we will navigate to Dashboard here
-      navigation.replace('MainTabs', { role: user.role });
+      const loggedInUser = await login(email, password);
+      Alert.alert('Login Successful', `Welcome back, ${loggedInUser.name}!`);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Login failed');
+      Alert.alert('Login Failed', error.message || "Check your credentials and try again.");
     }
   };
 

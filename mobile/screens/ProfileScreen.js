@@ -1,16 +1,17 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { AuthContext } from '../context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { getStudentStats, getTutorStats } from '../api';
 import { BarChart } from "react-native-gifted-charts";
 import { useIsFocused } from '@react-navigation/native';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Profile({ navigation }) {
   const { user } = useContext(AuthContext);
   const [stats, setStats] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
+  const { logout } = useContext(AuthContext);
 
   useEffect(() => {
       if (isFocused) {
@@ -121,7 +122,8 @@ export default function Profile({ navigation }) {
       <View style={styles.bottomContent}>
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={() => navigation.replace('Login')}>
+          onPress={logout}
+        >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>

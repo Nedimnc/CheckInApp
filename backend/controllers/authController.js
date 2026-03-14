@@ -1,5 +1,6 @@
 import { pool } from '../config/database.js';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 // Register controller
 const register = async (req, res) => {
@@ -43,14 +44,24 @@ const login = async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ message: 'Invalid Credentials' });
     }
-    res.json(user.rows[0]);
+    const token = jwt.sign({ id: user.rows[0].user_id }, process.env.JWT_SECRET, { expiresIn: '12h' });
+    res.json({
+      token,
+      user: {
+        user_id: user.rows[0].user_id,
+        email: user.rows[0].email,
+        name: user.rows[0].name,
+        role: user.rows[0].role,
+        panther_id: user.rows[0].panther_id
+      }
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }
 };
 
-export default { 
-  register, 
-  login 
+export default {
+  register,
+  login
 };
