@@ -81,8 +81,8 @@ function RootNavigation() {
       <Stack.Navigator>
         {user == null ? (
           <Stack.Group>
-            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+            <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: true }} />
+            <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: true }} />
           </Stack.Group>
         ) : (
           <Stack.Group>

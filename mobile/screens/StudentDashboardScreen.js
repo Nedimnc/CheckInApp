@@ -101,9 +101,10 @@ export default function StudentDashboardScreen({ navigation }) {
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        <Text style={styles.headerText}>All Sessions</Text>
         <TextInput
           style={styles.input}
-          placeholder="Search by course or tutor..."
+          placeholder="Search by course, title, or tutor..."
           onChangeText={setFilter}
           value={filter}
         />
@@ -112,7 +113,8 @@ export default function StudentDashboardScreen({ navigation }) {
           .filter((session) => {
             const isFuture = new Date(session.start_time) > new Date();
             const matchesSearch = session.subject.toLowerCase().includes(filter.toLowerCase()) ||
-              users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase());
+              users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase()) || 
+              session.title.toLowerCase().includes(filter.toLowerCase());
             return isFuture && matchesSearch;
           })
           .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
@@ -120,24 +122,24 @@ export default function StudentDashboardScreen({ navigation }) {
             const isMyBooking = session.student_id === user.user_id;
             const isCheckedIn = session.status === 'checked_in'; // Check if checked in
             // Consider it booked by other if it's booked OR checked in by someone else
-            const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isMyBooking; 
+            const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isMyBooking;
 
             return (
-              <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard]}>
+              <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard, isCheckedIn && { borderLeftColor: '#5B21B6' }]}>
                 <View style={styles.headerRow}>
                   <Text style={styles.subjectTitle}>{session.subject}: {session.title}</Text>
 
                   {/* UPDATED: Badge rendering logic */}
                   {isMyBooking ? (
                     isCheckedIn ? (
-                      <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>Checked In ✓</Text></View>
+                      <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
                     ) : (
-                      <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>Booked by You</Text></View>
+                      <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>BOOKED BY YOU</Text></View>
                     )
                   ) : isBookedByOther ? (
-                    <View style={styles.badgeGray}><Text style={styles.badgeTextGray}>Unavailable</Text></View>
+                    <View style={styles.badgeGray}><Text style={styles.badgeTextGray}>UNAVAILABLE</Text></View>
                   ) : (
-                    <View style={styles.badgeBlue}><Text style={styles.badgeTextBlue}>Open</Text></View>
+                    <View style={styles.badgeBlue}><Text style={styles.badgeTextBlue}>OPEN</Text></View>
                   )}
                 </View>
 
@@ -210,7 +212,7 @@ export default function StudentDashboardScreen({ navigation }) {
       </ScrollView>
       {/* Floating QR Scanner Button */}
       <TouchableOpacity
-        style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
+        style={[styles.floatingButtonStyle]}
         onPress={() => navigation.navigate('Scanner')}
       >
         <Ionicons name="qr-code-outline" size={30} color="white" />
@@ -221,18 +223,18 @@ export default function StudentDashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 50 },
+  headerText: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, color: '#333' },
   input: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
-    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2,
+    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2, shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
   },
   sessionCard: {
     backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1,
     shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2',
   },
-  myBookingCard: {
-    borderLeftColor: '#4CAF50', backgroundColor: '#FFF'
-  },
+  myBookingCard: { borderLeftColor: '#2E7D32', backgroundColor: '#FFF' },
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
   },
@@ -260,9 +262,9 @@ const styles = StyleSheet.create({
   },
   bookButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   scanButton: {
-    backgroundColor: '#2D52A2', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 18,
-    borderRadius: 15, marginBottom: 20, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2,
-    shadowRadius: 5,
+    backgroundColor: '#2D52A2', flexDirection: 'row', alignItems: 'center', justifyContent: 
+    'center', padding: 18, borderRadius: 15, marginBottom: 20, elevation: 5, shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 5,
   },
   scanButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
   actionRow: {
@@ -276,10 +278,15 @@ const styles = StyleSheet.create({
     paddingVertical: 6, paddingHorizontal: 10,
     borderRadius: 8, borderWidth: 1
   },
-  qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },
-  cancelButton: { borderColor: '#D32F2F', backgroundColor: '#FFEBEE' },
+  qrButton: { borderColor: '#CDD4FF', backgroundColor: '#F5F7FA' },
+  cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: 12, marginLeft: 4 },
 
   emptyText: { textAlign: 'center', marginTop: 20, color: '#888' },
-  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  floatingButtonStyle: {
+    position: 'absolute', width: 60, height: 60, alignItems: 'center', 
+    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', 
+    borderRadius: 30, elevation: 5, shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4
+  },
 });

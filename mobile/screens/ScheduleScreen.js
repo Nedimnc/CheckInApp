@@ -129,29 +129,19 @@ export default function Schedule({ navigation }) {
     const counterpartLabel = isImTheTutor ? "Student" : "Tutor";
     const counterpartName = users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
     const isPast = new Date(session.start_time) < new Date();
-    const isCheckedIn = session.status === 'checked_in'; 
+    const isCheckedIn = session.status === 'checked_in';
 
     return (
-      <View key={session.session_id} style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard]}>
+      <View key={session.session_id} style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard, isCheckedIn && !isPast && { borderLeftColor: '#5B21B6' }]}>
         <View style={styles.headerRow}>
-          <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}</Text>
+          <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}: {session.title}</Text>
           {/* Swap between Confirmed and Checked In */}
-          {!isPast && (
-            isCheckedIn ? (
+          {!isPast && ( isCheckedIn ? (
               <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
             ) : (
-              <View style={styles.badge}><Text style={styles.badgeText}>CONFIRMED</Text></View>
+              <View style={styles.badge}><Text style={styles.badgeText}>BOOKED</Text></View>
             )
           )}
-        </View>
-
-        <Text style={[styles.title, isPast && styles.pastText]}>{session.title}</Text>
-
-        <View style={styles.row}>
-          <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
-          <Text style={[styles.info, isPast && styles.pastText]}>
-            {counterpartLabel}: {counterpartName}
-          </Text>
         </View>
 
         <View style={styles.row}>
@@ -166,9 +156,16 @@ export default function Schedule({ navigation }) {
           <Text style={[styles.info, isPast && styles.pastText]}>{session.location}</Text>
         </View>
 
+        <View style={styles.row}>
+          <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
+          <Text style={[styles.info, isPast && styles.pastText]}>
+            {counterpartLabel}: {counterpartName}
+          </Text>
+        </View>
+
         {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
         {!isPast && !isCheckedIn && (
-          <View style={styles.actionRow}>
+          <View style={[styles.actionRow, { justifyContent: isImTheTutor ? 'space-between' : 'flex-end' } ]}>
 
             {/* IF I AM THE TUTOR */}
             {isImTheTutor ? (
@@ -179,6 +176,19 @@ export default function Schedule({ navigation }) {
                 >
                   <Ionicons name="qr-code-outline" size={16} color="#2D52A2" />
                   <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionButton, styles.copyButton]}
+                  onPress={() => {
+                    const { session_id, student_id, ...sessionCopy } = session;
+                    navigation.navigate('SessionCreate', {
+                      sessionToEdit: { ...sessionCopy, status: 'open' }
+                    });
+                  }}
+                >
+                  <Ionicons name="copy-outline" size={16} color="#679968" />
+                  <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -194,7 +204,7 @@ export default function Schedule({ navigation }) {
                   onPress={() => handleTutorCancel(session.session_id)}
                 >
                   <Ionicons name="trash-outline" size={16} color="#D32F2F" />
-                  <Text style={[styles.actionText, { color: '#D32F2F' }]}>Cancel</Text>
+                  <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
                 </TouchableOpacity>
               </>
             ) : (
@@ -248,7 +258,7 @@ export default function Schedule({ navigation }) {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>
-          Sessions for {new Date(selectedDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
+          Sessions for {new Date(selectedDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'long', day: 'numeric' })}
         </Text>
 
         {daySessions.length > 0 ? (
@@ -267,22 +277,25 @@ export default function Schedule({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9FAFB', padding: 20 },
   headerTitle: { fontSize: 30, fontWeight: 'bold', color: '#111827', marginBottom: 15, marginTop: 10 },
-  calendarContainer: { marginBottom: 20, borderRadius: 12, overflow: 'hidden', elevation: 3, backgroundColor: 'white' },
+  calendarContainer: { marginBottom: 20, borderRadius: 12, overflow: 'hidden', elevation: 3, backgroundColor: 'white', },
   section: { marginBottom: 25 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10, color: '#333' },
   emptyContainer: { alignItems: 'center', marginTop: 20 },
   emptyText: { color: '#888', fontStyle: 'italic', marginTop: 10 },
-  card: { borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, elevation: 2 },
-  upcomingCard: { backgroundColor: '#FFF', borderColor: '#2D52A2', borderLeftWidth: 5 },
-  pastCard: { backgroundColor: '#F3F4F6', borderColor: '#E5E7EB' },
+  card: {
+    backgroundColor: '#FFF', borderRadius: 16, padding: 20,
+    marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+  },
+  upcomingCard: { backgroundColor: '#FFF', borderLeftColor: '#2E7D32', borderLeftWidth: 5 },
+  pastCard: { backgroundColor: '#F3F4F6', borderLeftColor: '#c9cacf', borderLeftWidth: 5 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  subject: { fontSize: 16, fontWeight: 'bold', color: '#2D52A2' },
-  title: { fontSize: 15, fontWeight: '600', marginBottom: 10, color: '#1F2937' },
-  
-  badge: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
-  badgeText: { fontSize: 10, fontWeight: 'bold', color: '#1976D2' },
-  
-  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  subject: { fontSize: 16, fontWeight: 'bold', color: '#333', flex: 1, paddingRight: 5 },
+
+  badge: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  badgeText: { fontSize: 10, fontWeight: 'bold', color: '#2E7D32' },
+
+  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   badgeTextPurple: { fontSize: 10, fontWeight: 'bold', color: '#5B21B6' },
 
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
@@ -291,7 +304,8 @@ const styles = StyleSheet.create({
 
   actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 8 },
   actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8, borderWidth: 1 },
-  qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },
+  qrButton: { borderColor: '#CDD4FF', backgroundColor: '#F5F7FA' },
+  copyButton: { borderColor: '#b6e0b5', backgroundColor: '#f5fff5' },
   editButton: { borderColor: '#FFE0B2', backgroundColor: '#FFF3E0' },
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: 12, marginLeft: 4 },
