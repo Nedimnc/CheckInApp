@@ -125,9 +125,9 @@ export default function StudentDashboardScreen({ navigation }) {
             const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isMyBooking;
 
             return (
-              <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard, isCheckedIn && { borderLeftColor: '#5B21B6' }]}>
+              <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard, isMyBooking && isCheckedIn && { borderLeftColor: '#5B21B6' }, isBookedByOther && styles.unavailableCard]}>
                 <View style={styles.headerRow}>
-                  <Text style={styles.subjectTitle}>{session.subject}: {session.title}</Text>
+                  <Text style={[styles.subjectTitle, isBookedByOther && styles.unavailableText]}>{session.subject}: {session.title}</Text>
 
                   {/* UPDATED: Badge rendering logic */}
                   {isMyBooking ? (
@@ -144,27 +144,27 @@ export default function StudentDashboardScreen({ navigation }) {
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="calendar-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>
+                  <Ionicons name="calendar-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
+                  <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
                     {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>
+                  <Ionicons name="time-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
+                  <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
                     {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="location-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>{session.location}</Text>
+                  <Ionicons name="location-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
+                  <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>{session.location}</Text>
                 </View>
 
                 <View style={styles.infoRow}>
-                  <Ionicons name="person-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>
+                  <Ionicons name="person-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
+                  <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
                     Tutor: {users.find(u => u.user_id === session.tutor_id)?.name || 'Loading...'}
                   </Text>
                 </View>
@@ -235,6 +235,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2',
   },
   myBookingCard: { borderLeftColor: '#2E7D32', backgroundColor: '#FFF' },
+  unavailableCard: { backgroundColor: '#F5F5F5', borderLeftColor: '#c9cacf' },
   headerRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
   },
@@ -242,6 +243,7 @@ const styles = StyleSheet.create({
 
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   infoText: { marginLeft: 10, color: '#555', fontSize: 15 },
+  unavailableText: { color: '#9CA3AF' },
 
   badgeBlue: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   badgeTextBlue: { color: '#1976D2', fontSize: 12, fontWeight: 'bold' },
