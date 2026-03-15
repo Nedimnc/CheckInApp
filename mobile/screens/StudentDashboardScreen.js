@@ -96,7 +96,7 @@ export default function StudentDashboardScreen({ navigation }) {
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}

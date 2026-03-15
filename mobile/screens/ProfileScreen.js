@@ -76,7 +76,7 @@ export default function Profile({ navigation }) {
                   width={100}
                   barWidth={10}
                   initialSpacing={10}
-                  spacing={18}
+                  spacing={15}
                   noOfSections={3}
                   barBorderRadius={4}
                   yAxisThickness={0}
