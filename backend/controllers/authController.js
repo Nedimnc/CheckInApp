@@ -27,6 +27,10 @@ const register = async (req, res) => {
 
 // Login controller
 const login = async (req, res) => {
+  if (!process.env.JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined in .env");
+    return res.status(500).json({ message: 'Internal configuration error, check backend log' });
+  }
   if (!req.body) {
     return res.status(400).json({ message: 'Request body is required' });
   }
