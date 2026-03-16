@@ -12,6 +12,11 @@ export default function ScannerScreen({ navigation }) {
 
   useEffect(() => {
     const getCameraPermissions = async () => {
+      const { status: existingStatus } = await Camera.getCameraPermissionsAsync();
+      if (existingStatus === 'granted') {
+        setHasPermission(true);
+        return;
+      }
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
     };
@@ -26,8 +31,8 @@ export default function ScannerScreen({ navigation }) {
 
     try {
       // 1. The data from the QR Code is the secure JWT token
-      const token = data; 
-      
+      const token = data;
+
       // Safety check: Make sure it's not empty
       if (!token) {
         throw new Error("Invalid QR Code.");

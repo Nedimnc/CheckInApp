@@ -5,6 +5,7 @@ import { getSessions, getUsers, cancelSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
+import socket from '../services/socket';
 
 export default function Schedule({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -23,6 +24,56 @@ export default function Schedule({ navigation }) {
       loadData();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    const handleCreated = (newSession) => {
+      if (newSession.student_id === user.user_id || newSession.tutor_id === user.user_id) {
+        setMySessions(prev => [...prev, newSession]);
+      }
+    };
+    const handleUpdated = (updatedSession) => {
+      setMySessions(prev => {
+        const isBookedOrCheckedIn = updatedSession.status === 'booked' || updatedSession.status === 'checked_in';
+        const isMySession = updatedSession.student_id === user.user_id || updatedSession.tutor_id === user.user_id;
+        if (isBookedOrCheckedIn && isMySession) {
+          const exists = prev.find(s => s.session_id === updatedSession.session_id);
+          return exists
+            ? prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s)
+            : [...prev, updatedSession];
+        } else {
+          return prev.filter(s => s.session_id !== updatedSession.session_id);
+        }
+      });
+    };
+
+    const handleCancelled = ({ session_id }) => {
+      setMySessions(prev => prev.filter(s => Number(s.session_id) !== Number(session_id)));
+    };
+
+    socket.on('session_created', handleCreated);
+    socket.on('session_booked', handleUpdated);
+    socket.on('session_unbooked', handleUpdated);
+    socket.on('session_updated', handleUpdated);
+    socket.on('session_cancelled', handleCancelled);
+
+    return () => {
+      socket.off('session_created', handleCreated);
+      socket.off('session_booked', handleUpdated);
+      socket.off('session_unbooked', handleUpdated);
+      socket.off('session_updated', handleUpdated);
+      socket.off('session_cancelled', handleCancelled);
+    };
+  }, [user.user_id]);
+
+  useEffect(() => {
+    const marks = {};
+    mySessions.forEach(session => {
+      const dateKey = session.start_time.split('T')[0];
+      marks[dateKey] = { marked: true, dotColor: '#2D52A2' };
+    });
+    marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: '#2D52A2' };
+    setMarkedDates(marks);
+  }, [mySessions, selectedDate]);
 
   const loadData = async () => {
     try {
@@ -88,7 +139,6 @@ export default function Schedule({ navigation }) {
           onPress: async () => {
             try {
               await cancelSession(sessionId, user.user_id);
-              loadData(); // Refresh list
               Alert.alert("Success", "Session deleted.");
             } catch (error) {
               Alert.alert("Error", "Could not delete session.");
@@ -110,7 +160,6 @@ export default function Schedule({ navigation }) {
           onPress: async () => {
             try {
               await unbookSession(sessionId, user.user_id);
-              loadData(); // Refresh list
               Alert.alert("Success", "You have been removed from this session.");
             } catch (error) {
               Alert.alert("Error", error.message || "Could not unbook.");
@@ -136,11 +185,11 @@ export default function Schedule({ navigation }) {
         <View style={styles.headerRow}>
           <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}: {session.title}</Text>
           {/* Swap between Confirmed and Checked In */}
-          {!isPast && ( isCheckedIn ? (
-              <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
-            ) : (
-              <View style={styles.badge}><Text style={styles.badgeText}>BOOKED</Text></View>
-            )
+          {!isPast && (isCheckedIn ? (
+            <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
+          ) : (
+            <View style={styles.badge}><Text style={styles.badgeText}>BOOKED</Text></View>
+          )
           )}
         </View>
 
@@ -165,7 +214,7 @@ export default function Schedule({ navigation }) {
 
         {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
         {!isPast && !isCheckedIn && (
-          <View style={[styles.actionRow, { justifyContent: isImTheTutor ? 'space-between' : 'flex-end' } ]}>
+          <View style={[styles.actionRow, { justifyContent: isImTheTutor ? 'space-between' : 'flex-end' }]}>
 
             {/* IF I AM THE TUTOR */}
             {isImTheTutor ? (

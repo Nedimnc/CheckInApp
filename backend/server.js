@@ -36,7 +36,7 @@ io.on('connection', (socket) => {
 
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minute period starting from the first request
-  max: 100, // limit each IP to however many requests per windowMs
+  max: 300, // limit each IP to however many requests per windowMs
   message: {
     message: 'Too many requests from this IP, please try again after 5 minutes.'
   },

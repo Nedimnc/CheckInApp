@@ -2,6 +2,7 @@ import React, { createContext, use, useEffect, useState } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import api, { loginUser } from '../api';
 import { Alert } from 'react-native';
+import socket from '../services/socket';
 
 export const AuthContext = createContext();
 
@@ -29,11 +30,28 @@ export const AuthProvider = ({ children }) => {
     checkToken();
   }, []);
 
+  useEffect(() => {
+    const setupSocket = async () => {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        socket.auth = { token };
+        socket.connect();
+        console.log('Auto-connected to Socket.IO with token');
+      }
+    };
+    setupSocket();
+  }, []);
+
   const login = async (email, password) => {
     try {
       const data = await loginUser(email, password);
       await SecureStore.setItemAsync('userToken', data.token);
       await SecureStore.setItemAsync('userData', JSON.stringify(data.user));
+      api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+      socket.auth = { token: data.token };
+      socket.connect();
+      console.log('Socket connected manually after login');
       setUser(data.user);
       return data.user;
     } catch (error) {
@@ -42,11 +60,12 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    console.log('Logging out and clearing token');
+    console.log('Clearing token, disconnecting socket, and logging out');
     await SecureStore.deleteItemAsync('userToken');
     await SecureStore.deleteItemAsync('userData');
+    socket.disconnect();
     setUser(null);
-  }
+  };
 
   useEffect(() => {
     const interceptor = api.interceptors.response.use(

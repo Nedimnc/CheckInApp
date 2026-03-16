@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 // Added getUsers to imports
 import { getSessions, cancelSession, getUsers } from '../api';
 import { useIsFocused } from '@react-navigation/native';
+import socket from '../services/socket';
 
 export default function TutorDashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -20,6 +21,27 @@ export default function TutorDashboardScreen({ navigation }) {
       loadData();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    const handleBooked = (updatedSession) => {
+      if (updatedSession.tutor_id === user.user_id) {
+        setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+      }
+    };
+    const handleUnbooked = (updatedSession) => {
+      if (updatedSession.tutor_id === user.user_id) {
+        setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+      }
+    };
+    
+    socket.on('session_booked', handleBooked);
+    socket.on('session_unbooked', handleUnbooked);
+    
+    return () => {
+      socket.off('session_booked', handleBooked);
+      socket.off('session_unbooked', handleUnbooked);
+    };
+  }, [user.user_id]);
 
   const loadData = async () => {
     try {
@@ -84,7 +106,7 @@ export default function TutorDashboardScreen({ navigation }) {
         {sessions
           .filter((session) => {
             const matchesSearch = session.subject.toLowerCase().includes(filter.toLowerCase()) ||
-              users.find(u => u.user_id === session.student_id)?.name.toLowerCase().includes(filter.toLowerCase()) || 
+              users.find(u => u.user_id === session.student_id)?.name.toLowerCase().includes(filter.toLowerCase()) ||
               session.title.toLowerCase().includes(filter.toLowerCase());
             return matchesSearch;
           })

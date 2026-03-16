@@ -30,7 +30,6 @@ export const createSession = async (req, res) => {
     );
 
     const io = req.app.get('socketio');
-    console.log('is io defined?', !!io);
     if (io) {
       io.emit('session_created', newSession.rows[0]);
       console.log('Socket emitted: session_created')

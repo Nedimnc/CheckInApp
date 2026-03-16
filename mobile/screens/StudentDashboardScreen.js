@@ -4,12 +4,7 @@ import { AuthContext } from '../context/AuthContext';
 import { getSessions, getUsers, bookSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { io } from 'socket.io-client';
-import { IP_ADDRESS } from '../config';
-import * as SecureStore from 'expo-secure-store';
-
-const SOCKET_URL = `http://${IP_ADDRESS}:3000`; // Ensure this matches your backend URL
-console.log('Connecting to Socket.IO at:', SOCKET_URL);
+import socket from '../services/socket';
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -23,59 +18,49 @@ export default function StudentDashboardScreen({ navigation }) {
   useEffect(() => {
     if (isFocused) {
       loadData();
-      loadUsers();
     }
   }, [isFocused]);
 
   useEffect(() => {
-    let socket;
-    const setupSocket = async () => {
-      const token = await SecureStore.getItemAsync('userToken');
-      socket = io(SOCKET_URL, {
-        auth: { token: token }
-      });
-      console.log('Attempting Socket.IO connection with token');
-      socket.on('connect', () => {
-        console.log('STUDENT DASHBOARD: Connected to Socket, ID: ', socket.id);
-      });
-      socket.on('session_created', (newSession) => {
-        console.log('STUDENT DASHBOARD: I heard session_created!', newSession.title);
-        setSessions((prev) => [newSession, ...prev]);
-      });
-      socket.on('session_booked', (updatedSession) => {
-        console.log('STUDENT DASHBOARD: I heard session_booked!', updatedSession.title);
-        setSessions((prev) =>
-          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-        );
-      });
-      socket.on('session_unbooked', (updatedSession) => {
-        console.log('STUDENT DASHBOARD: I heard session_unbooked!', updatedSession.title);
-        setSessions((prev) =>
-          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-        );
-      });
-      socket.on('session_cancelled', ({ session_id }) => {
-        console.log('STUDENT DASHBOARD: I heard session_cancelled!', session_id);
-        setSessions((prev) => prev.filter(s => Number(s.session_id || s.id) !== Number(session_id)));
-      });
-      socket.on('session_updated', (updatedSession) => {
-        console.log('STUDENT DASHBOARD: I heard session_updated!', updatedSession.title);
-        setSessions((prev) =>
-          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-        );
-      });
+    const handleCreated = (newSession) => {
+      setSessions(prev => [...prev, newSession]);
+    };
+    const handleBooked = (updatedSession) => {
+      setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+    };
+    const handleUnbooked = (updatedSession) => {
+      setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+    };
+    const handleCancelled = ({ session_id }) => {
+      setSessions(prev => prev.filter(s => Number(s.session_id || s.id) !== Number(session_id)));
     }
-    setupSocket();
+    const handleUpdated = (updatedSession) => {
+      setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+    };
+
+    socket.on('session_created', handleCreated);
+    socket.on('session_booked', handleBooked);
+    socket.on('session_unbooked', handleUnbooked);
+    socket.on('session_cancelled', handleCancelled);
+    socket.on('session_updated', handleUpdated);
+
     return () => {
-      socket.disconnect();
-      console.log('STUDENT DASHBOARD: Socket disconnected');
+      socket.off('session_created', handleCreated);
+      socket.off('session_booked', handleBooked);
+      socket.off('session_unbooked', handleUnbooked);
+      socket.off('session_cancelled', handleCancelled);
+      socket.off('session_updated', handleUpdated);
     };
   }, []);
 
   const loadData = async () => {
     try {
-      const data = await getSessions();
-      setSessions(data);
+      const [sessionsData, usersData] = await Promise.all([
+        getSessions(),
+        getUsers()
+      ]);
+      setSessions(sessionsData);
+      setUsers(usersData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -83,18 +68,9 @@ export default function StudentDashboardScreen({ navigation }) {
     }
   };
 
-  const loadUsers = async () => {
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([loadData(), loadUsers()]).then(() => setRefreshing(false));
+    loadData().then(() => setRefreshing(false));
   }, []);
 
   // --- HANDLERS ---
@@ -111,7 +87,6 @@ export default function StudentDashboardScreen({ navigation }) {
             try {
               await bookSession(session.session_id, user.user_id);
               Alert.alert("Success", "You have booked this session!");
-              loadData();
             } catch (error) {
               const serverMessage = error.message || 'Could not complete the request.';
               if (serverMessage.includes("Invalid token")) {
@@ -139,7 +114,6 @@ export default function StudentDashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               await unbookSession(session.session_id, user.user_id);
-              loadData();
               Alert.alert("Success", "You have been removed from this session.");
             } catch (error) {
               if (error.response && error.response.status !== 403 && error.response.status !== 401) {
