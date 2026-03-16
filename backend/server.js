@@ -2,14 +2,34 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-
 import indexRoutes from './routes/index.js';
+import http from 'http';
+import { Server } from 'socket.io';
 
 dotenv.config();
 
 const app = express();
 app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+app.set('socketio', io);
+
+io.on('connection', (socket) => {
+  console.log('A user connected: ' + socket.id);
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
 
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minute period starting from the first request
@@ -35,7 +55,7 @@ app.get('/', (req, res) => {
 app.use('/api', indexRoutes);
 
 // Start Server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
   console.log('JWT Secret loaded: ', process.env.JWT_SECRET ? 'Yes' : 'No');
 });
