@@ -26,8 +26,8 @@ app.set('socketio', io);
 io.on('connection', (socket) => {
   console.log('A user connected: ' + socket.id);
   
-  socket.on('disconnect', () => {
-    console.log('User disconnected');
+  socket.on('disconnect', (reason) => {
+    console.log('User disconnected. Reason: ' + reason);
   });
 });
 

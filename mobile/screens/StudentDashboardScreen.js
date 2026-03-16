@@ -4,6 +4,11 @@ import { AuthContext } from '../context/AuthContext';
 import { getSessions, getUsers, bookSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { io } from 'socket.io-client';
+import { IP_ADDRESS } from '../config';
+
+const SOCKET_URL = `http://${IP_ADDRESS}:3000`; // Update if your backend is hosted elsewhere
+console.log('Connecting to Socket.IO at:', SOCKET_URL);
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -20,6 +25,42 @@ export default function StudentDashboardScreen({ navigation }) {
       loadUsers();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    const socket = io(SOCKET_URL);
+    socket.on('connect', () => {
+      console.log('STUDENT DASHBOARD: Connected to Socket, ID: ', socket.id);
+    });
+    socket.on('session_created', (newSession) => {
+      console.log('STUDENT DASHBOARD: I heard session_created!', newSession.title);
+      setSessions((prev) => [newSession, ...prev]);
+    });
+    socket.on('session_booked', (updatedSession) => {
+      console.log('STUDENT DASHBOARD: I heard session_booked!', updatedSession.title);
+      setSessions((prev) =>
+        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+      );
+    });
+    socket.on('session_unbooked', (updatedSession) => {
+      console.log('STUDENT DASHBOARD: I heard session_unbooked!', updatedSession.title);
+      setSessions((prev) =>
+        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+      );
+    });
+    socket.on('session_cancelled', ({ session_id }) => {
+      console.log('STUDENT DASHBOARD: I heard session_cancelled!', session_id);
+      setSessions((prev) => prev.filter(s => Number(s.session_id || s.id) !== Number(session_id)));
+    });
+    socket.on('session_updated', (updatedSession) => {
+      console.log('STUDENT DASHBOARD: I heard session_updated!', updatedSession.title);
+      setSessions((prev) =>
+        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+      );
+    });
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   const loadData = async () => {
     try {
