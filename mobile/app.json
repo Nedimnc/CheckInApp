@@ -13,28 +13,23 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.checkin",
-      "icon": "./assets/app.icon",
-      "infoPlist": {
-        "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
+      "icon": "./assets/app.icon"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
       },
-      "android": {
-        "adaptiveIcon": {
-          "foregroundImage": "./assets/adaptive-icon.png",
-          "backgroundColor": "#ffffff"
-        },
-        "edgeToEdgeEnabled": true,
-        "package": "com.anonymous.checkin"
-      },
-      "web": {
-        "favicon": "./assets/favicon.png"
-      },
-      "plugins": [
-        "expo-secure-store"
-      ]
-    }
+      "edgeToEdgeEnabled": true,
+      "package": "com.anonymous.checkin" 
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }
