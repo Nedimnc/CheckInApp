@@ -6,8 +6,9 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { io } from 'socket.io-client';
 import { IP_ADDRESS } from '../config';
+import * as SecureStore from 'expo-secure-store';
 
-const SOCKET_URL = `http://${IP_ADDRESS}:3000`; // Update if your backend is hosted elsewhere
+const SOCKET_URL = `http://${IP_ADDRESS}:3000`; // Ensure this matches your backend URL
 console.log('Connecting to Socket.IO at:', SOCKET_URL);
 
 export default function StudentDashboardScreen({ navigation }) {
@@ -27,38 +28,47 @@ export default function StudentDashboardScreen({ navigation }) {
   }, [isFocused]);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL);
-    socket.on('connect', () => {
-      console.log('STUDENT DASHBOARD: Connected to Socket, ID: ', socket.id);
-    });
-    socket.on('session_created', (newSession) => {
-      console.log('STUDENT DASHBOARD: I heard session_created!', newSession.title);
-      setSessions((prev) => [newSession, ...prev]);
-    });
-    socket.on('session_booked', (updatedSession) => {
-      console.log('STUDENT DASHBOARD: I heard session_booked!', updatedSession.title);
-      setSessions((prev) =>
-        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-      );
-    });
-    socket.on('session_unbooked', (updatedSession) => {
-      console.log('STUDENT DASHBOARD: I heard session_unbooked!', updatedSession.title);
-      setSessions((prev) =>
-        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-      );
-    });
-    socket.on('session_cancelled', ({ session_id }) => {
-      console.log('STUDENT DASHBOARD: I heard session_cancelled!', session_id);
-      setSessions((prev) => prev.filter(s => Number(s.session_id || s.id) !== Number(session_id)));
-    });
-    socket.on('session_updated', (updatedSession) => {
-      console.log('STUDENT DASHBOARD: I heard session_updated!', updatedSession.title);
-      setSessions((prev) =>
-        prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
-      );
-    });
+    let socket;
+    const setupSocket = async () => {
+      const token = await SecureStore.getItemAsync('userToken');
+      socket = io(SOCKET_URL, {
+        auth: { token: token }
+      });
+      console.log('Attempting Socket.IO connection with token');
+      socket.on('connect', () => {
+        console.log('STUDENT DASHBOARD: Connected to Socket, ID: ', socket.id);
+      });
+      socket.on('session_created', (newSession) => {
+        console.log('STUDENT DASHBOARD: I heard session_created!', newSession.title);
+        setSessions((prev) => [newSession, ...prev]);
+      });
+      socket.on('session_booked', (updatedSession) => {
+        console.log('STUDENT DASHBOARD: I heard session_booked!', updatedSession.title);
+        setSessions((prev) =>
+          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+        );
+      });
+      socket.on('session_unbooked', (updatedSession) => {
+        console.log('STUDENT DASHBOARD: I heard session_unbooked!', updatedSession.title);
+        setSessions((prev) =>
+          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+        );
+      });
+      socket.on('session_cancelled', ({ session_id }) => {
+        console.log('STUDENT DASHBOARD: I heard session_cancelled!', session_id);
+        setSessions((prev) => prev.filter(s => Number(s.session_id || s.id) !== Number(session_id)));
+      });
+      socket.on('session_updated', (updatedSession) => {
+        console.log('STUDENT DASHBOARD: I heard session_updated!', updatedSession.title);
+        setSessions((prev) =>
+          prev.map((s) => s.session_id === updatedSession.session_id ? updatedSession : s)
+        );
+      });
+    }
+    setupSocket();
     return () => {
       socket.disconnect();
+      console.log('STUDENT DASHBOARD: Socket disconnected');
     };
   }, []);
 
@@ -103,7 +113,13 @@ export default function StudentDashboardScreen({ navigation }) {
               Alert.alert("Success", "You have booked this session!");
               loadData();
             } catch (error) {
-              Alert.alert("Error", error.message || "Failed to book");
+              const serverMessage = error.message || 'Could not complete the request.';
+              if (serverMessage.includes("Invalid token")) {
+                console.log("Auth error caught via string matching - silencing local alert.");
+                return;
+              }
+
+              Alert.alert("Action Failed", serverMessage);
             }
           }
         }
@@ -126,7 +142,9 @@ export default function StudentDashboardScreen({ navigation }) {
               loadData();
               Alert.alert("Success", "You have been removed from this session.");
             } catch (error) {
-              Alert.alert("Error", error.message || "Could not unbook.");
+              if (error.response && error.response.status !== 403 && error.response.status !== 401) {
+                Alert.alert("Error", "Something went wrong. Please try again.");
+              }
             }
           }
         }
@@ -154,7 +172,7 @@ export default function StudentDashboardScreen({ navigation }) {
           .filter((session) => {
             const isFuture = new Date(session.start_time) > new Date();
             const matchesSearch = session.subject.toLowerCase().includes(filter.toLowerCase()) ||
-              users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase()) || 
+              users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase()) ||
               session.title.toLowerCase().includes(filter.toLowerCase());
             return isFuture && matchesSearch;
           })
@@ -267,7 +285,7 @@ const styles = StyleSheet.create({
   headerText: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, color: '#333' },
   input: {
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
-    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2, shadowColor: '#000', 
+    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
   },
   sessionCard: {
@@ -305,8 +323,8 @@ const styles = StyleSheet.create({
   },
   bookButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   scanButton: {
-    backgroundColor: '#2D52A2', flexDirection: 'row', alignItems: 'center', justifyContent: 
-    'center', padding: 18, borderRadius: 15, marginBottom: 20, elevation: 5, shadowColor: '#000', 
+    backgroundColor: '#2D52A2', flexDirection: 'row', alignItems: 'center', justifyContent:
+      'center', padding: 18, borderRadius: 15, marginBottom: 20, elevation: 5, shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 5,
   },
   scanButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
@@ -327,9 +345,9 @@ const styles = StyleSheet.create({
 
   emptyText: { textAlign: 'center', marginTop: 20, color: '#888' },
   floatingButtonStyle: {
-    position: 'absolute', width: 60, height: 60, alignItems: 'center', 
-    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', 
-    borderRadius: 30, elevation: 5, shadowColor: '#000', 
+    position: 'absolute', width: 60, height: 60, alignItems: 'center',
+    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2',
+    borderRadius: 30, elevation: 5, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4
   },
 });

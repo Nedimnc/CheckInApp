@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import indexRoutes from './routes/index.js';
 import http from 'http';
 import { Server } from 'socket.io';
+import authenticateSocket from './middleware/socketMiddleware.js';
 
 dotenv.config();
 
@@ -16,15 +17,17 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: '*',
+    origin: '*', // keep * for local development, change to https://checkinapp.cloud for production
     methods: ['GET', 'POST']
   }
 });
 
 app.set('socketio', io);
 
+io.use(authenticateSocket);
+
 io.on('connection', (socket) => {
-  console.log('A user connected: ' + socket.id);
+  console.log('A user connected: ', socket.user.id);
   
   socket.on('disconnect', (reason) => {
     console.log('User disconnected. Reason: ' + reason);

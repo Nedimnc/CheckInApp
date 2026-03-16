@@ -12,6 +12,8 @@ const api = axios.create({
   },
 });
 
+export default api;
+
 // Request interceptor to include the token in all requests
 api.interceptors.request.use(
   async (axiosConfig) => {
