@@ -1,10 +1,11 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
+import { requestNotificationPermissions } from './services/NotificationService';
 
 // Import Screens
 import LoginScreen from './screens/LoginScreen';
@@ -67,6 +68,22 @@ function MyTabs({ route }) {
 
 function RootNavigation() {
   const { user, isLoading } = useContext(AuthContext);
+
+  useEffect(() => {
+    console.log('RootNavigation mounted. Requesting notification permissions...');
+    const getPermissions = async () => {
+      try {
+        const { status } = await requestNotificationPermissions();
+        console.log('Notification permissions granted:', status);
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'You will not receive notifications about new bookings.');
+        }
+      } catch (error) {
+        console.error('Error requesting notification permissions:', error);
+      }
+    };
+    getPermissions();
+  }, []);
 
   if (isLoading) {
     return (

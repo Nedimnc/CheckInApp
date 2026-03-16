@@ -5,6 +5,7 @@ import { AuthContext } from '../context/AuthContext';
 // Added getUsers to imports
 import { getSessions, cancelSession, getUsers } from '../api';
 import { useIsFocused } from '@react-navigation/native';
+import { triggerLocalNotification } from '../services/NotificationService';
 
 export default function TutorDashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -63,6 +64,11 @@ export default function TutorDashboardScreen({ navigation }) {
         }
       ]
     );
+  };
+
+  const handleTestNotification = async () => {
+    Alert.alert("Timer Started", "A local notification will trigger in 3 seconds.");
+    await triggerLocalNotification("Test Student");
   };
 
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
@@ -200,6 +206,12 @@ export default function TutorDashboardScreen({ navigation }) {
       >
         <Ionicons name="add" size={30} color="white" />
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.floatingButtonStyleNoti, { backgroundColor: '#2D52A2' }]}
+        onPress={handleTestNotification}
+      >
+        <Ionicons name="notifications" size={30} color="white" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -263,6 +275,12 @@ const styles = StyleSheet.create({
   floatingButtonStyle: {
     position: 'absolute', width: 60, height: 60, alignItems: 'center',
     justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2',
+    borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 4
+  },
+  floatingButtonStyleNoti: {
+    position: 'absolute', width: 60, height: 60, alignItems: 'center',
+    justifyContent: 'center', left: 30, bottom: 30, backgroundColor: '#2D52A2',
     borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3, shadowRadius: 4
   },
