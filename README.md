@@ -21,7 +21,7 @@ All of these are required:
 
 1. Clone the repository
 ```bash
-    git clone https://github.com/Nedimnc/CheckInApp
+    git clone https://github.com/Nedimnc/CheckInApp.git
     cd CheckInApp
 ```
 2. Backend Setup
@@ -31,8 +31,9 @@ All of these are required:
 ```
 - Create a file called `.env` in the `backend` folder with the following contents (file is ignored by Git):
 ```bash
-  PORT = 3000
-  DATABASE_URL = postgres://admin:password@localhost:5432/checkin_db
+  PORT=3000
+  DATABASE_URL=postgres://admin:password@localhost:5432/checkin_db
+  JWT_SECRET=your_super_secret_random_string_here
 ```
 3. Mobile Setup
 - Install dependencies:
@@ -41,22 +42,23 @@ All of these are required:
 ```
 - Create a copy of the `config.example.js` file in the `mobile` folder, set your IPV4 address, and rename it to `config.js`
 
-## Deployment
-1. Start the PostgreSQL container while in the `CheckInApp` folder
+## Local Development
+To get the full system running, you'll need three terminal tabs:
+1. Database (Docker)
 ```bash
   docker-compose up
 ```
-2. Start the app while in the `mobile` folder in a new terminal:
+2. Backend API:
 ```bash
   cd mobile
   npx expo start
 ```
-3. Start the backend while in the `backend` folder in a new terminal:
+3. Mobile App (Expo):
 ```bash
   cd backend
   npm run dev
 ```
-4. Scan the QR code in the `mobile` terminal with your phone and open with **Expo Go**
+4. Scan the QR code in the `mobile` terminal with your phone and open with **Expo Go**. Ensure your phone and computer are on the same Wi-Fi network.
 - To stop the processes, use `Ctrl + C` in the `mobile` and `backend` terminals and use the following command to view current containers and to close the container
 ```bash
   docker ps
