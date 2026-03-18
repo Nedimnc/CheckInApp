@@ -131,12 +131,12 @@ export default function Profile({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, padding: 20, backgroundColor: '#F5F7FA' },
+  content: { flex: 1, padding: 20},
   headerText: { fontSize: 35, fontWeight: 'bold' },
   subsectionText: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   profileSection: { flexDirection: 'row', alignItems: 'center', padding: 10, marginBottom: 30 },
   bottomContent: { marginBottom: 20 },
-  logoutButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', backgroundColor: '#D9534F', marginTop: 70 },
+  logoutButton: { paddingVertical: 16, borderRadius: 30, alignItems: 'center', backgroundColor: '#D9534F', marginTop: 70 },
   logoutText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#bbbec2', justifyContent: 'center', alignItems: 'center', marginRight: 30 },
   avatarText: { fontSize: 50 },

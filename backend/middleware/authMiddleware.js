@@ -9,10 +9,11 @@ const authenticateToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    console.log('API Call Authenticated');
     next();
   } catch (err) {
     console.error(err.message);
-    res.status(403).json({ message: 'Invalid token' });
+    res.status(403).json({ message: 'Invalid token (authMiddleware)' });
   }
 };
 

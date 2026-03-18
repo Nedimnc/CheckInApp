@@ -28,6 +28,13 @@ export const createSession = async (req, res) => {
       'INSERT INTO sessions (tutor_id, student_id, title, subject, start_time, end_time, location, status) VALUES ($1, NULL, $2, $3, $4, $5, $6, \'open\') RETURNING *',
       [tutor_id, title, subject, cleanStart, cleanEnd, location]
     );
+
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('session_created', newSession.rows[0]);
+      console.log('Socket emitted: session_created')
+    }
+
     res.json(newSession.rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -95,6 +102,12 @@ export const bookSession = async (req, res) => {
 
     const result = await pool.query(updateQuery, [student_id, session_id]);
 
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('session_booked', result.rows[0]);
+      console.log('Socket emitted: session_booked')
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -123,6 +136,12 @@ export const cancelSession = async (req, res) => {
     // 3. Delete it
     const deleteQuery = 'DELETE FROM sessions WHERE session_id = $1 RETURNING *';
     await pool.query(deleteQuery, [session_id]);
+
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('session_cancelled', { session_id });
+      console.log('Socket emitted: session_cancelled')
+    }
 
     res.json({ message: "Session cancelled successfully" });
   } catch (err) {
@@ -176,6 +195,12 @@ export const updateSession = async (req, res) => {
       title, subject, location, cleanStart, cleanEnd, session_id
     ]);
 
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('session_updated', result.rows[0]);
+      console.log('Socket emitted: session_updated')
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -202,6 +227,12 @@ export const unbookSession = async (req, res) => {
       return res.status(400).json({ message: "Session not found or you are not the booker" });
     }
 
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('session_unbooked', result.rows[0]);
+      console.log('Socket emitted: session_unbooked')
+    }
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err.message);
@@ -215,8 +246,8 @@ export const generateQRToken = async (req, res) => {
   try {
     // Create a secure token that expires in 15 minutes
     const token = jwt.sign(
-      { session_id: session_id }, 
-      process.env.JWT_SECRET || 'super_secret_key', 
+      { session_id: session_id },
+      process.env.JWT_SECRET || 'super_secret_key',
       { expiresIn: '15m' }
     );
     res.json({ token });
@@ -256,7 +287,7 @@ export const checkinSession = async (req, res) => {
       SET status = 'checked_in' 
       WHERE session_id = $1 
       RETURNING *`;
-    
+
     const result = await pool.query(updateQuery, [session_id]);
 
     res.json({ message: "Check-in successful!", session: result.rows[0] });
@@ -275,5 +306,5 @@ export default {
   updateSession,
   unbookSession,
   checkinSession,
-  generateQRToken 
+  generateQRToken
 };

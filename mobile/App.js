@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
-import { requestNotificationPermissions } from './services/NotificationService';
+import { requestNotificationPermissions } from './services/notifications';
 
 // Import Screens
 import LoginScreen from './screens/LoginScreen';

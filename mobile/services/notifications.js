@@ -30,7 +30,7 @@ export const triggerLocalNotification = async (studentName) => {
         },
         trigger: {
             type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-            seconds: 5, // Trigger after 5 seconds for testing
+            seconds: 1, // Trigger after 1 second for testing
         },
     });
 };
