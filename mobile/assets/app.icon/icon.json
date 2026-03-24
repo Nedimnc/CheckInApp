@@ -1,59 +1,24 @@
 {
-  "fill" : "system-light",
+  "fill" : {
+    "solid" : "display-p3:0.17647,0.32157,0.63529,1.00000"
+  },
   "groups" : [
     {
-      "blur-material" : 0.5,
-      "layers" : [
+      "blend-mode-specializations" : [
         {
-          "image-name" : "5.4 – layer.svg",
-          "name" : "5.4 – layer"
+          "value" : "normal"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "normal"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "plus-lighter"
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.71
-      }
-    },
-    {
-      "blur-material" : 0.5,
-      "layers" : [
-        {
-          "image-name" : "4.3 – layer.svg",
-          "name" : "4.3 – layer"
-        }
-      ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.71
-      }
-    },
-    {
-      "blur-material" : 0.5,
-      "layers" : [
-        {
-          "image-name" : "3.2 – layer.svg",
-          "name" : "3.2 – layer"
-        }
-      ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.71
-      }
-    },
-    {
-      "blur-material" : 0.5,
+      "blur-material" : null,
+      "hidden" : false,
       "layers" : [
         {
           "blend-mode-specializations" : [
@@ -62,22 +27,202 @@
               "value" : "normal"
             }
           ],
-          "glass" : true,
-          "hidden" : false,
-          "image-name" : "2.1 – layer.svg",
-          "name" : "2.1 – layer"
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.33751,0.51024,1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "4.4 – layer.svg",
+          "name" : "4.4 – layer",
+          "position" : {
+            "scale" : 1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "lighting" : "individual",
       "opacity" : 1,
       "shadow" : {
         "kind" : "layer-color",
-        "opacity" : 0.3
+        "opacity" : 0.5
       },
-      "specular" : false,
+      "specular" : true,
       "translucency" : {
         "enabled" : true,
-        "value" : 0.71
+        "value" : 0.5
+      }
+    },
+    {
+      "blend-mode-specializations" : [
+        {
+          "value" : "normal"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "normal"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "plus-lighter"
+        }
+      ],
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.33751,0.51024,1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "3.3 – layer.svg",
+          "name" : "3.3 – layer"
+        }
+      ],
+      "lighting" : "individual",
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "blend-mode-specializations" : [
+        {
+          "value" : "normal"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "normal"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "plus-lighter"
+        }
+      ],
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "blend-mode-specializations" : [
+            {
+              "value" : "normal"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.33751,0.51024,1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "2.2 – layer.svg",
+          "name" : "2.2 – layer"
+        }
+      ],
+      "lighting" : "individual",
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "blend-mode-specializations" : [
+        {
+          "value" : "normal"
+        },
+        {
+          "appearance" : "dark",
+          "value" : "normal"
+        },
+        {
+          "appearance" : "tinted",
+          "value" : "plus-lighter"
+        }
+      ],
+      "blur-material" : null,
+      "hidden" : false,
+      "layers" : [
+        {
+          "blend-mode-specializations" : [
+            {
+              "appearance" : "dark",
+              "value" : "normal"
+            }
+          ],
+          "fill-specializations" : [
+            {
+              "value" : {
+                "solid" : "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance" : "dark",
+              "value" : {
+                "solid" : "display-p3:0.33751,0.51024,1.00000,1.00000"
+              }
+            }
+          ],
+          "image-name" : "1.1 – layer.svg",
+          "name" : "1.1 – layer"
+        }
+      ],
+      "lighting" : "individual",
+      "opacity" : 1,
+      "shadow" : {
+        "kind" : "layer-color",
+        "opacity" : 0.5
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
       }
     }
   ],

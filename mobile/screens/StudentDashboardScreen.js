@@ -142,14 +142,18 @@ export default function StudentDashboardScreen({ navigation }) {
   };
 
   const filteredSessions = useMemo(() => {
+    const now = new Date();
     return sessions
       .filter((session) => {
-        const isFuture = new Date(session.start_time) > new Date();
+        const startTime = new Date(session.start_time);
+        const endTime = new Date(session.end_time);
+        const isVisible = session.status === 'open' ? startTime > now : endTime > now;
+        if (!isVisible) return false;
         const matchesSearch =
           session.subject.toLowerCase().includes(filter.toLowerCase()) ||
           users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase()) ||
           session.title.toLowerCase().includes(filter.toLowerCase());
-        return isFuture && matchesSearch;
+        return matchesSearch;
       })
       .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
   }, [sessions, filter, users]);

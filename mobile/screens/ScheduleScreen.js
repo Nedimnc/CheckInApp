@@ -1,5 +1,5 @@
-import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Alert, LayoutAnimation, UIManager, Platform, FlatList } from 'react-native';
+import React, { useState, useContext, useEffect, useCallback, useMemo, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, Alert, LayoutAnimation, FlatList, Easing } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { getSessions, getUsers, cancelSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
@@ -14,6 +14,7 @@ export default function Schedule({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
+  const [filter, setFilter] = useState('all');
 
   // Calendar State
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -30,9 +31,8 @@ export default function Schedule({ navigation }) {
       requestAnimationFrame(() => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setMySessions(prev => {
-          const isBookedOrCheckedIn = updatedSession.status === 'booked' || updatedSession.status === 'checked_in';
           const isMySession = updatedSession.student_id === user.user_id || updatedSession.tutor_id === user.user_id;
-          if (isBookedOrCheckedIn && isMySession) {
+          if (isMySession) {
             const exists = prev.find(s => s.session_id === updatedSession.session_id);
             return exists
               ? prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s)
@@ -67,11 +67,14 @@ export default function Schedule({ navigation }) {
     const marks = {};
     mySessions.forEach(session => {
       const dateKey = session.start_time.split('T')[0];
-      marks[dateKey] = { marked: true, dotColor: '#2D52A2' };
+      const shouldMark = (filter === 'all') || (session.status === 'booked' || session.status === 'checked_in');
+      if (shouldMark) {
+        marks[dateKey] = { marked: true, dotColor: '#2D52A2' };
+      }
     });
     marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: '#2D52A2' };
     setMarkedDates(marks);
-  }, [mySessions, selectedDate]);
+  }, [mySessions, selectedDate, filter]);
 
   const loadData = async () => {
     try {
@@ -80,11 +83,12 @@ export default function Schedule({ navigation }) {
         getUsers()
       ]);
 
-      const relevantSessions = sessionsData.filter(session =>
-        session.student_id === user.user_id ||
-        // Include 'checked_in' so they don't disappear from tutor's calendar
-        (session.tutor_id === user.user_id && (session.status === 'booked' || session.status === 'checked_in'))
-      );
+      const relevantSessions = sessionsData.filter(session => {
+        if (user.role === 'tutor') {
+          return session.tutor_id === user.user_id;
+        }
+        return session.student_id === user.user_id;
+      });
 
       setMySessions(relevantSessions);
       setUsers(usersData);
@@ -92,8 +96,10 @@ export default function Schedule({ navigation }) {
       // Mark Calendar
       const marks = {};
       relevantSessions.forEach(session => {
-        const dateKey = session.start_time.split('T')[0];
-        marks[dateKey] = { marked: true, dotColor: '#2D52A2' };
+        if (session.status === 'booked' || session.status === 'checked_in') {
+          const dateKey = session.start_time.split('T')[0];
+          marks[dateKey] = { marked: true, dotColor: '#2D52A2' };
+        }
       });
       // Highlight Selected
       marks[selectedDate] = { ...marks[selectedDate], selected: true, selectedColor: '#2D52A2' };
@@ -171,8 +177,19 @@ export default function Schedule({ navigation }) {
   const daySessions = useMemo(() => {
     return mySessions
       .filter(s => s.start_time.startsWith(selectedDate))
+      .filter(s => {
+        if (user.role !== 'tutor' || filter === 'all') return true;
+        return s.status === 'booked' || s.status === 'checked_in';
+      })
       .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-  }, [mySessions, selectedDate]);
+  }, [mySessions, selectedDate, filter, user.role]);
+
+  const handleToggle = (newFilter) => {
+    requestAnimationFrame(() => {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setFilter(newFilter);
+    });
+  }
 
   return (
     <View style={{ flex: 1 }}>
@@ -204,7 +221,27 @@ export default function Schedule({ navigation }) {
           <>
             <View style={styles.container}>
               <Text style={styles.headerTitle}>My Schedule</Text>
-
+              {user.role === 'tutor' && (
+                <View style={styles.toggleContainer}>
+                  <View style={[styles.slidingPill, filter === 'all' ? { left: 4 } : { left: '51%' }]} />
+                  <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => handleToggle('all')}
+                  >
+                    <Text style={[styles.filterButtonText, filter === 'all' && styles.filterButtonTextActive]}>
+                      All Sessions
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.filterButton}
+                    onPress={() => handleToggle('booked')}
+                  >
+                    <Text style={[styles.filterButtonText, filter === 'booked' && styles.filterButtonTextActive]}>
+                      Only Booked
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               <View style={styles.calendarContainer}>
                 <Calendar
                   onDayPress={onDayPress}
@@ -243,20 +280,29 @@ const SessionCard = ({ session, user, users, navigation, onPressQR, onPressCopy,
   const counterpartId = isImTheTutor ? session.student_id : session.tutor_id;
   const counterpartLabel = isImTheTutor ? "Student" : "Tutor";
   const counterpartName = users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
-  const isPast = new Date(session.start_time) < new Date();
+  const isPast = new Date(session.end_time) < new Date();
   const isCheckedIn = session.status === 'checked_in';
+  const isBooked = session.status === 'booked';
+
+  let accentColor = '#2D52A2';
+  if (isPast) {
+    accentColor = '#CCC';
+  } else if (isCheckedIn) {
+    accentColor = '#5B21B6';
+  } else if (isBooked) {
+    accentColor = '#2E7D32';
+  };
 
   return (
-    <View style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard, isCheckedIn && !isPast && { borderLeftColor: '#5B21B6' }]}>
+    <View style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard, { borderLeftColor: accentColor }]}>
       <View style={styles.headerRow}>
         <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}: {session.title}</Text>
         {/* Swap between Confirmed and Checked In */}
-        {!isPast && (isCheckedIn ? (
-          <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
-        ) : (
-          <View style={styles.badge}><Text style={styles.badgeText}>BOOKED</Text></View>
-        )
-        )}
+        <View style={[styles.statusBadge, !isPast ? (isCheckedIn ? styles.checkedInBadge : (isBooked ? styles.bookedBadge : styles.openBadge)) : null]}>
+          <Text style={[styles.statusText, isCheckedIn ? styles.checkedInText : (isBooked ? styles.bookedText : styles.openText)]}>
+            {!isPast ? (isCheckedIn ? 'CHECKED IN ✓' : (isBooked ? 'BOOKED' : 'OPEN')) : null}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.row}>
@@ -271,12 +317,14 @@ const SessionCard = ({ session, user, users, navigation, onPressQR, onPressCopy,
         <Text style={[styles.info, isPast && styles.pastText]}>{session.location}</Text>
       </View>
 
-      <View style={styles.row}>
-        <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
-        <Text style={[styles.info, isPast && styles.pastText]}>
-          {counterpartLabel}: {counterpartName}
-        </Text>
-      </View>
+      {isBooked || isCheckedIn ? (
+        <View style={styles.row}>
+          <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
+          <Text style={[styles.info, isPast && styles.pastText]}>
+            {counterpartLabel}: {counterpartName}
+          </Text>
+        </View>
+      ) : null}
 
       {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
       {!isPast && !isCheckedIn && (
@@ -360,11 +408,15 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   subject: { fontSize: 16, fontWeight: 'bold', color: '#333', flex: 1, paddingRight: 5 },
 
-  badge: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeText: { fontSize: 10, fontWeight: 'bold', color: '#2E7D32' },
+  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
+  openBadge: { backgroundColor: '#E3F2FD' },
+  bookedBadge: { backgroundColor: '#E8F5E9' },
+  checkedInBadge: { backgroundColor: '#EDE9FE' },
 
-  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  badgeTextPurple: { fontSize: 10, fontWeight: 'bold', color: '#5B21B6' },
+  statusText: { fontSize: 12, fontWeight: 'bold' },
+  openText: { color: '#1976D2' },
+  bookedText: { color: '#2E7D32' },
+  checkedInText: { color: '#5B21B6' },
 
   row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
   info: { marginLeft: 8, fontSize: 14, color: '#555' },
@@ -376,5 +428,15 @@ const styles = StyleSheet.create({
   copyButton: { borderColor: '#b6e0b5', backgroundColor: '#f5fff5' },
   editButton: { borderColor: '#FFE0B2', backgroundColor: '#FFF3E0' },
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
-  actionText: {  fontWeight: '600', fontSize: 13, marginLeft: 6 },
+  actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
+
+  toggleContainer: { flexDirection: 'row', backgroundColor: '#dedede', borderRadius: 25, padding: 4, marginBottom: 20 },
+  slidingPill: {
+    position: 'absolute', top: 4, bottom: 4, width: '50%', backgroundColor: '#2D52A2', 
+    borderRadius: 21, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, 
+    shadowOpacity: 0.2, shadowRadius: 3, elevation: 3, },
+  filterButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 21 },
+  filterButtonActive: { backgroundColor: '#2D52A2', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  filterButtonText: { color: '#666', fontWeight: '600' },
+  filterButtonTextActive: { color: '#FFF' },
 });

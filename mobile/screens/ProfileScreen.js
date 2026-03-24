@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getStudentStats, getTutorStats } from '../api';
 import { BarChart } from "react-native-gifted-charts";
@@ -13,44 +13,44 @@ export default function Profile({ navigation }) {
   const isFocused = useIsFocused();
   const { logout } = useContext(AuthContext);
 
-  useEffect(() => {
-    if (isFocused) {
-      loadStats();
-    }
-  }, [isFocused]);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    const fetchStats = user.role === 'student' ? getStudentStats : getTutorStats;
-    fetchStats(user.user_id).then((data) => {
-      if (user.role === 'student') {
-        const chartData = data.monthlyBreakdown?.map(item => ({
-          value: parseFloat(item.hours_count) || 0,
-          label: item.month_label,
-          frontColor: '#177AD5',
-        }));
-        setStats({ ...data.summary, chartData });
-      } else {
-        setStats(data);
-      }
-      setRefreshing(false);
-    });
-  };
-
-  const loadStats = () => {
-    if (!user.user_id) return;
-    getStudentStats(user.user_id).then((data) => {
+  const processStats = (data) => {
+    if (user.role === 'student') {
       const chartData = data.monthlyBreakdown?.map(item => ({
         value: parseFloat(item.hours_count) || 0,
         label: item.month_label,
         frontColor: '#177AD5',
       }));
       setStats({ ...data.summary, chartData });
-    });
+    } else {
+      setStats(data);
+    }
   };
 
+  const loadStats = async () => {
+    if (!user.user_id) return;
+    try {
+      const fetchApi = user.role === 'student' ? getStudentStats : getTutorStats;
+      const data = await fetchApi(user.user_id);
+      processStats(data);
+    } catch (error) {
+      console.error("Error loading stats:", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    loadStats();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    if (isFocused) {
+      loadStats();
+    }
+  }, [isFocused]);
+
   return (
-    <ScrollView style={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+    <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
       <View style={styles.profileSection}>
         <View style={styles.avatar}>
           <Ionicons name='person' size={52} color='white' />
@@ -63,12 +63,12 @@ export default function Profile({ navigation }) {
           <Text style={styles.subsectionText}>My Learning Stats</Text>
           <View style={styles.learningStats}>
             <View style={styles.statCard}>
-              <Text style={styles.cardHeader}>Time Spent in Sessions</Text>
+              <Text style={styles.cardHeader}>Time Spent</Text>
               <Text style={styles.cardInfo}>{Number(stats?.total_hours || 0).toFixed(1)} hours</Text>
               <Text style={styles.cardSubtext}>Total Sessions: {stats?.total_sessions || 0}</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.cardHeader}>Time Previously Spent Learning</Text>
+              <Text style={styles.cardHeader}>Session Hours per Month</Text>
               <View style={{ marginLeft: -10, marginTop: 20 }}>
                 <BarChart
                   data={stats?.chartData || []}
@@ -93,13 +93,14 @@ export default function Profile({ navigation }) {
           <Text style={styles.subsectionText}>My Teaching Stats</Text>
           <View style={styles.learningStats}>
             <View style={styles.statCard}>
-              <Text style={styles.cardHeader}>Total Students Impacted</Text>
-              <Text style={styles.cardInfo}>{stats?.total_unique_students || "null"} {Number(stats?.total_unique_students) === 1 ? 'student' : 'students'}</Text>
-              <Text style={styles.cardSubtext}>Total Sessions: {stats?.total_sessions}</Text>
+              <Text style={styles.cardHeader}>Impact</Text>
+              <Text style={styles.cardInfo}>{stats?.total_unique_students || 0} {Number(stats?.total_unique_students) === 1 ? 'student' : 'students'}</Text>
+              <Text style={styles.cardSubtext}>Unique Students</Text>
             </View>
             <View style={styles.statCard}>
-              <Text style={styles.cardHeader}>Hours Taught Last Month</Text>
-              <Text style={styles.cardInfo}>{Number(stats?.hours_taught_last_month).toFixed(1)} hours</Text>
+              <Text style={styles.cardHeader}>Recent</Text>
+              <Text style={styles.cardInfo}>{Number(stats?.hours_taught_last_month || 0).toFixed(1)} hours</Text>
+              <Text style={styles.cardSubtext}>Hours (Last month)</Text>
             </View>
           </View>
         </>
@@ -131,12 +132,12 @@ export default function Profile({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, padding: 20},
+  content: { flex: 1, padding: 20 },
   headerText: { fontSize: 35, fontWeight: 'bold' },
   subsectionText: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   profileSection: { flexDirection: 'row', alignItems: 'center', padding: 10, marginBottom: 30 },
-  bottomContent: { marginBottom: 20 },
-  logoutButton: { paddingVertical: 16, borderRadius: 30, alignItems: 'center', backgroundColor: '#D9534F', marginTop: 70 },
+  bottomContent: { marginTop: 'auto' },
+  logoutButton: { paddingVertical: 16, borderRadius: 30, alignItems: 'center', backgroundColor: '#D9534F', marginBottom: 'auto' },
   logoutText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#bbbec2', justifyContent: 'center', alignItems: 'center', marginRight: 30 },
   avatarText: { fontSize: 50 },
