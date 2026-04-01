@@ -1,11 +1,12 @@
 import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, LayoutAnimation } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, LayoutAnimation, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 // Added getUsers to imports
 import { getSessions, cancelSession, getUsers } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import socket from '../services/socket';
+import SessionBlock from '../components/SessionBlock';
 
 export default function TutorDashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -119,18 +120,18 @@ export default function TutorDashboardScreen({ navigation }) {
         data={filteredSessions}
         keyExtractor={(item) => item.session_id.toString()}
         renderItem={({ item }) => (
-          <SessionCard
+          <SessionBlock
             session={item}
+            currentUser={user}
+            users={users}
             student={users.find(u => u.user_id === item.student_id)}
-            onPressQR={() => navigation.navigate('SessionQR', { session: item })} // Use item
+            onPressQR={() => navigation.navigate('SessionQR', { session: item })}
             onPressCopy={() => {
-              const { session_id, student_id, ...sessionCopy } = item; // Use item
-              navigation.navigate('SessionCreate', {
-                sessionToEdit: { ...sessionCopy, status: 'open' }
-              });
+              const { session_id, student_id, ...sessionCopy } = item;
+              navigation.navigate('SessionCreate', { sessionToEdit: { ...sessionCopy, status: 'open' } });
             }}
-            onPressEdit={() => navigation.navigate('SessionCreate', { sessionToEdit: item })} // Match prop name
-            onPressCancel={() => handleCancelSession(item.session_id)} // Use item.session_id
+            onPressEdit={() => navigation.navigate('SessionCreate', { sessionToEdit: item })}
+            onPressCancel={() => handleCancelSession(item.session_id)}
           />
         )}
         ListHeaderComponent={
@@ -148,117 +149,22 @@ export default function TutorDashboardScreen({ navigation }) {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
       />
-      {/* Floating Add Button */}
+
       <TouchableOpacity
         style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
         onPress={() => navigation.navigate('SessionCreate')}
       >
         <Ionicons name="calendar-outline" size={30} color="white" />
       </TouchableOpacity>
-    </View >
-  );
-}
-
-const SessionCard = ({ session, student, onPressQR, onPressCopy, onPressEdit, onPressCancel }) => {
-  const isBooked = session.status === 'booked';
-  const isCheckedIn = session.status === 'checked_in';
-
-  return (
-    <View key={session.session_id} style={[styles.sessionCard, isCheckedIn && styles.checkedInSessionCard, isBooked && styles.bookedSessionCard, !isBooked && !isCheckedIn && styles.openSessionCard]}>
-
-      {/* Session Info */}
-      <View style={styles.cardHeader}>
-        <Text style={styles.subjectText}>{session.subject}: {session.title}</Text>
-        {/* UPDATED BADGE LOGIC */}
-        <View style={[styles.statusBadge, isCheckedIn ? styles.checkedInBadge : (isBooked ? styles.bookedBadge : styles.openBadge)]}>
-          <Text style={[styles.statusText, isCheckedIn ? styles.checkedInText : (isBooked ? styles.bookedText : styles.openText)]}>
-            {isCheckedIn ? 'CHECKED IN ✓' : (isBooked ? 'BOOKED' : 'OPEN')}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="calendar-outline" size={16} color="#666" />
-        <Text style={styles.infoText}>
-          {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-        </Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="time-outline" size={16} color="#666" />
-        <Text style={styles.infoText}>
-          {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="location-outline" size={16} color="#666" />
-        <Text style={styles.infoText}>{session.location}</Text>
-      </View>
-
-      {/* UPDATED: Student Info Section (Visible if Booked OR Checked In) */}
-      {(isBooked || isCheckedIn) && student && (
-        <View style={styles.studentInfoBox}>
-          <Text style={styles.studentLabel}>Booked Student:</Text>
-          <View style={styles.studentRow}>
-            <Ionicons name="person" size={16} color={isCheckedIn ? '#5B21B6' : '#2E7D32'} />
-            <Text style={styles.studentName}>{student.name}</Text>
-          </View>
-          <View style={styles.studentRow}>
-            <Ionicons name="card-outline" size={16} color="#555" />
-            <Text style={styles.studentId}>ID: {student.panther_id || 'N/A'}</Text>
-          </View>
-        </View>
-      )}
-
-      {/* ACTION BUTTONS */}
-      <View style={styles.actionRow}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.qrButton]}
-          onPress={onPressQR}
-        >
-          <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-          <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.copyButton]}
-          onPress={onPressCopy}
-        >
-          <Ionicons name="copy-outline" size={18} color='#679968' />
-          <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.editButton]}
-          onPress={onPressEdit}
-        >
-          <Ionicons name="create-outline" size={18} color="#F57C00" />
-          <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.cancelButton]}
-          onPress={onPressCancel}
-        >
-          <Ionicons name="trash-outline" size={18} color="#D32F2F" />
-          <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-
     </View>
   );
-};
+
+}
 
 
 const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, padding: 20, paddingBottom: 100 },
   headerText: { fontSize: 30, fontWeight: 'bold', color: '#111827', marginBottom: 15 },
-  sessionCard: {
-    backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,
-    shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2'
-  },
   openSessionCard: { borderLeftColor: '#2D52A2', backgroundColor: '#FFF' },
   bookedSessionCard: { borderLeftColor: '#2E7D32', backgroundColor: '#FFF' },
   checkedInSessionCard: { borderLeftColor: '#5B21B6', backgroundColor: '#FFF' },
@@ -290,11 +196,17 @@ const styles = StyleSheet.create({
 
   actionRow: {
     flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1,
-    borderTopColor: '#EEE', justifyContent: 'space-between', gap: 10
+    borderTopColor: '#EEE'
   },
   actionButton: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 8,
-    paddingHorizontal: 12, borderRadius: 30, borderWidth: 1
+    paddingHorizontal: 12, borderRadius: 30, borderWidth: 1, marginRight: 10
+  },
+  actionRowContainer: {
+    marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE'
+  },
+  actionRowScroll: {
+    flexDirection: 'row', alignItems: 'center', paddingLeft: 2, paddingRight: 8
   },
   qrButton: { borderColor: '#CDD4FF', backgroundColor: '#F5F7FA' },
   copyButton: { borderColor: '#b6e0b5', backgroundColor: '#f5fff5' },

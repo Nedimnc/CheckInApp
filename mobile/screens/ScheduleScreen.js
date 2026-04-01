@@ -6,6 +6,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import socket from '../services/socket';
+import SessionBlock from '../components/SessionBlock';
 
 export default function Schedule({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -197,22 +198,17 @@ export default function Schedule({ navigation }) {
         data={daySessions}
         keyExtractor={(item) => item.session_id.toString()}
         renderItem={({ item }) => (
-          <SessionCard
+          <SessionBlock
             session={item}
-            user={user}
+            currentUser={user}
             users={users}
-            navigation={navigation}
-            // tutor action buttons
-            onPressQR={() => navigation.navigate('SessionQR', { session: item })} // Use item
+            onPressQR={() => navigation.navigate('SessionQR', { session: item })}
             onPressCopy={() => {
-              const { session_id, student_id, ...sessionCopy } = item; // Use item
-              navigation.navigate('SessionCreate', {
-                sessionToEdit: { ...sessionCopy, status: 'open' }
-              });
+              const { session_id, student_id, ...sessionCopy } = item;
+              navigation.navigate('SessionCreate', { sessionToEdit: { ...sessionCopy, status: 'open' } });
             }}
-            onPressEdit={() => navigation.navigate('SessionCreate', { sessionToEdit: item })} // Match prop name
-            onCancel={() => handleTutorCancel(item.session_id)}
-            // student action buttons
+            onPressEdit={() => navigation.navigate('SessionCreate', { sessionToEdit: item })}
+            onPressCancel={() => handleTutorCancel(item.session_id)}
             onPressScan={() => navigation.navigate('Scanner')}
             onUnbook={() => handleStudentUnbook(item.session_id)}
           />
@@ -274,122 +270,6 @@ export default function Schedule({ navigation }) {
     </View>
   );
 }
-
-const SessionCard = ({ session, user, users, navigation, onPressQR, onPressCopy, onPressEdit, onCancel, onPressScan, onUnbook }) => {
-  const isImTheTutor = session.tutor_id === user.user_id;
-  const counterpartId = isImTheTutor ? session.student_id : session.tutor_id;
-  const counterpartLabel = isImTheTutor ? "Student" : "Tutor";
-  const counterpartName = users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
-  const isPast = new Date(session.end_time) < new Date();
-  const isCheckedIn = session.status === 'checked_in';
-  const isBooked = session.status === 'booked';
-
-  let accentColor = '#2D52A2';
-  if (isPast) {
-    accentColor = '#CCC';
-  } else if (isCheckedIn) {
-    accentColor = '#5B21B6';
-  } else if (isBooked) {
-    accentColor = '#2E7D32';
-  };
-
-  return (
-    <View style={[styles.card, isPast ? styles.pastCard : styles.upcomingCard, { borderLeftColor: accentColor }]}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.subject, isPast && styles.pastText]}>{session.subject}: {session.title}</Text>
-        {/* Swap between Confirmed and Checked In */}
-        <View style={[styles.statusBadge, !isPast ? (isCheckedIn ? styles.checkedInBadge : (isBooked ? styles.bookedBadge : styles.openBadge)) : null]}>
-          <Text style={[styles.statusText, isCheckedIn ? styles.checkedInText : (isBooked ? styles.bookedText : styles.openText)]}>
-            {!isPast ? (isCheckedIn ? 'CHECKED IN ✓' : (isBooked ? 'BOOKED' : 'OPEN')) : null}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <Ionicons name="time-outline" size={16} color={isPast ? "#999" : "#555"} />
-        <Text style={[styles.info, isPast && styles.pastText]}>
-          {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-
-      <View style={styles.row}>
-        <Ionicons name="location-outline" size={16} color={isPast ? "#999" : "#555"} />
-        <Text style={[styles.info, isPast && styles.pastText]}>{session.location}</Text>
-      </View>
-
-      {isBooked || isCheckedIn ? (
-        <View style={styles.row}>
-          <Ionicons name="person-outline" size={16} color={isPast ? "#999" : "#555"} />
-          <Text style={[styles.info, isPast && styles.pastText]}>
-            {counterpartLabel}: {counterpartName}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* ACTION BUTTONS ROW (UPDATED: Hide if checked in) */}
-      {!isPast && !isCheckedIn && (
-        <View style={[styles.actionRow, isImTheTutor && { justifyContent: 'space-between', gap: 10 }]}>
-
-          {/* IF I AM THE TUTOR */}
-          {isImTheTutor ? (
-            <>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.qrButton]}
-                onPress={onPressQR}
-              >
-                <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-                <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.copyButton]}
-                onPress={onPressCopy}
-              >
-                <Ionicons name="copy-outline" size={18} color="#679968" />
-                <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.editButton]}
-                onPress={onPressEdit}
-              >
-                <Ionicons name="create-outline" size={18} color="#F57C00" />
-                <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cancelButton]}
-                onPress={onCancel}
-              >
-                <Ionicons name="trash-outline" size={18} color="#D32F2F" />
-                <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            /* IF I AM THE STUDENT */
-            <>
-              <TouchableOpacity
-                style={[styles.actionButton, styles.qrButton]}
-                onPress={onPressScan}
-              >
-                <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-                <Text style={[styles.actionText, { color: '#2D52A2' }]}>Scan QR</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.actionButton, styles.cancelButton]}
-                onPress={onUnbook}
-              >
-                <Ionicons name="close-circle-outline" size={18} color="#D32F2F" />
-                <Text style={[styles.actionText, { color: '#D32F2F' }]}>Unbook</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      )}
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },

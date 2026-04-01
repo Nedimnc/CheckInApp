@@ -5,6 +5,7 @@ import { getSessions, getUsers, bookSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../services/socket';
+import SessionBlock from '../components/SessionBlock';
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -166,13 +167,13 @@ export default function StudentDashboardScreen({ navigation }) {
         data={filteredSessions}
         keyExtractor={(item) => item.session_id.toString()}
         renderItem={({ item }) => (
-          <SessionCard
+          <SessionBlock
             session={item}
-            user={user}
+            currentUser={user}
             users={users}
-            navigation={navigation}
-            handleBook={handleBook}
-            handleUnbook={handleUnbook}
+            onPressScan={() => navigation.navigate('Scanner')}
+            onUnbook={() => handleUnbook(item)}
+            onPressBook={() => handleBook(item)}
           />
         )}
         ListHeaderComponent={
@@ -197,98 +198,7 @@ export default function StudentDashboardScreen({ navigation }) {
   );
 }
 
-const SessionCard = ({ session, user, users, navigation, handleBook, handleUnbook }) => {
-  const isMyBooking = session.student_id === user.user_id;
-  const isCheckedIn = session.status === 'checked_in';
-  const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isMyBooking;
-  const slideAnim = useRef(new Animated.Value(isMyBooking ? 1 : 0)).current;
 
-  useEffect(() => {
-    Animated.timing(slideAnim, {
-      toValue: isMyBooking ? 1 : 0,
-      duration: 300,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  }, [isMyBooking]);
-
-  const bookTranslate = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -500],
-  });
-
-  const actionTranslate = slideAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [500, 0],
-  });
-
-  return (
-    <View style={[styles.sessionCard, isMyBooking && styles.myBookingCard, isMyBooking && isCheckedIn && { borderLeftColor: '#5B21B6' }, isBookedByOther && styles.unavailableCard]}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.subjectTitle, isBookedByOther && styles.unavailableText]}>{session.subject}: {session.title}</Text>
-        {isMyBooking ? (
-          isCheckedIn ? (
-            <View style={styles.badgePurple}><Text style={styles.badgeTextPurple}>CHECKED IN ✓</Text></View>
-          ) : (
-            <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>BOOKED BY YOU</Text></View>
-          )
-        ) : isBookedByOther ? (
-          <View style={styles.badgeGray}><Text style={styles.badgeTextGray}>UNAVAILABLE</Text></View>
-        ) : (
-          <View style={styles.badgeBlue}><Text style={styles.badgeTextBlue}>OPEN</Text></View>
-        )}
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="calendar-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
-        <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
-          {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-        </Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="time-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
-        <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
-          {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="location-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
-        <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>{session.location}</Text>
-      </View>
-
-      <View style={styles.infoRow}>
-        <Ionicons name="person-outline" size={16} color={isBookedByOther ? '#999' : '#555'} />
-        <Text style={[styles.infoText, isBookedByOther && styles.unavailableText]}>
-          Tutor: {users.find(u => u.user_id === session.tutor_id)?.name || 'Loading...'}
-        </Text>
-      </View>
-
-      {!isBookedByOther && !isCheckedIn && (
-        <View style={{ marginTop: 15, height: 60, overflow: 'hidden', borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'center' }}>
-          <Animated.View style={[styles.animatedContainer, { transform: [{ translateX: bookTranslate }] }]}>
-            <TouchableOpacity style={styles.bookButton} onPress={() => handleBook(session)}>
-              <Text style={styles.bookButtonText}>Book Session</Text>
-            </TouchableOpacity>
-          </Animated.View>
-          <Animated.View style={[styles.animatedContainer, { transform: [{ translateX: actionTranslate }] }]}>
-            <View style={[styles.actionRow, { borderTopWidth: 0, paddingTop: 0 }]}>
-              <TouchableOpacity style={[styles.actionButton, styles.qrButton]} onPress={() => navigation.navigate('Scanner')}>
-                <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-                <Text style={[styles.actionText, { color: '#2D52A2' }]}>Scan QR</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={() => handleUnbook(session)}>
-                <Ionicons name="close-circle-outline" size={18} color="#D32F2F" />
-                <Text style={[styles.actionText, { color: '#D32F2F' }]}>Unbook</Text>
-              </TouchableOpacity>
-            </View>
-          </Animated.View>
-        </View>
-      )}
-    </View>
-  );
-};
 
 const styles = StyleSheet.create({
   scrollContent: { padding: 20, paddingBottom: 50 },
@@ -297,11 +207,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
     padding: 15, marginBottom: 20, fontSize: 16, elevation: 2, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
-  },
-  sessionCard: {
-    backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1,
-    shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2',
   },
   myBookingCard: { borderLeftColor: '#2E7D32', backgroundColor: '#FFF' },
   unavailableCard: { backgroundColor: '#F5F5F5', borderLeftColor: '#c9cacf' },
