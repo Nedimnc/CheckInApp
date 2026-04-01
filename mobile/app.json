@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.anonymous.checkin",
-      "icon": "./assets/app.icon"
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {

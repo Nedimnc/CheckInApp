@@ -1,7 +1,8 @@
 import { io } from 'socket.io-client';
-import { IP_ADDRESS } from '../config';
+import config from '../config';
 
-const SOCKET_URL = `http://${IP_ADDRESS}:3000`; // ensure this matches your backend URL
+// Build socket URL from the configured API_URL (strip the /api path)
+const SOCKET_URL = config.API_URL.replace(/\/api\/?$/, '').replace(/\/$/, '');
 console.log(`Initializing Socket.IO connection at:`, SOCKET_URL, `(not connecting yet, waiting for auth)`);
 
 const socket = io(SOCKET_URL, {

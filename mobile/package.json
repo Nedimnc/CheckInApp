@@ -29,5 +29,8 @@
     "react-native-svg": "^15.15.3",
     "socket.io-client": "^4.8.3"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "expo-module-scripts": "^55.0.2"
+  }
 }
