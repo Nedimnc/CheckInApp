@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Calendar } from 'react-native-calendars';
 import socket from '../services/socket';
 import SessionBlock from '../components/SessionBlock';
+import theme from '../styles/theme';
 
 export default function Schedule({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -193,7 +194,7 @@ export default function Schedule({ navigation }) {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View>
       <FlatList
         data={daySessions}
         keyExtractor={(item) => item.session_id.toString()}
@@ -265,58 +266,27 @@ export default function Schedule({ navigation }) {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        contentContainerStyle={{ paddingBottom: 50 }}
+        contentContainerStyle={{ padding: theme.spacing.md, paddingBottom: 50 }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  headerTitle: { fontSize: 30, fontWeight: 'bold', color: '#111827', marginBottom: 15 },
-  calendarContainer: { marginBottom: 20, borderRadius: 12, overflow: 'hidden', elevation: 3, backgroundColor: 'white', },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-  emptyContainer: { alignItems: 'center', marginTop: 20 },
-  emptyText: { color: '#888', fontStyle: 'italic', marginTop: 10 },
-  card: {
-    backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,
-    shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2', marginHorizontal: 20,
-  },
-  upcomingCard: { backgroundColor: '#FFF', borderLeftColor: '#2E7D32', borderLeftWidth: 5 },
-  pastCard: { backgroundColor: '#F3F4F6', borderLeftColor: '#c9cacf', borderLeftWidth: 5 },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  subject: { fontSize: 16, fontWeight: 'bold', color: '#333', flex: 1, paddingRight: 5 },
+  container: { flex: 1, padding: theme.spacing.md },
+  headerTitle: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
+  calendarContainer: { marginBottom: theme.spacing.lg, borderRadius: theme.radii.md, overflow: 'hidden', elevation: 3, backgroundColor: theme.colors.card },
+  sectionTitle: { fontSize: theme.typography.h3, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
+  emptyContainer: { alignItems: 'center', marginTop: theme.spacing.md },
+  emptyText: { color: theme.colors.muted, fontStyle: 'italic', marginTop: theme.spacing.xs },
 
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
-  openBadge: { backgroundColor: '#E3F2FD' },
-  bookedBadge: { backgroundColor: '#E8F5E9' },
-  checkedInBadge: { backgroundColor: '#EDE9FE' },
-
-  statusText: { fontSize: 12, fontWeight: 'bold' },
-  openText: { color: '#1976D2' },
-  bookedText: { color: '#2E7D32' },
-  checkedInText: { color: '#5B21B6' },
-
-  row: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
-  info: { marginLeft: 8, fontSize: 14, color: '#555' },
-  pastText: { color: '#9CA3AF' },
-
-  actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 15 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 30, borderWidth: 1 },
-  qrButton: { borderColor: '#CDD4FF', backgroundColor: '#F5F7FA' },
-  copyButton: { borderColor: '#b6e0b5', backgroundColor: '#f5fff5' },
-  editButton: { borderColor: '#FFE0B2', backgroundColor: '#FFF3E0' },
-  cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
-  actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
-
-  toggleContainer: { flexDirection: 'row', backgroundColor: '#dedede', borderRadius: 25, padding: 4, marginBottom: 20 },
+  toggleContainer: { flexDirection: 'row', backgroundColor: '#dedede', borderRadius: 25, padding: theme.spacing.xxs, marginBottom: theme.spacing.lg },
   slidingPill: {
-    position: 'absolute', top: 4, bottom: 4, width: '50%', backgroundColor: '#2D52A2', 
-    borderRadius: 21, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, 
-    shadowOpacity: 0.2, shadowRadius: 3, elevation: 3, },
+    position: 'absolute', top: 4, bottom: 4, width: '50%', backgroundColor: theme.colors.primary,
+    borderRadius: 21, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 3, elevation: 3,
+  },
   filterButton: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 21 },
-  filterButtonActive: { backgroundColor: '#2D52A2', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
+  filterButtonActive: { backgroundColor: theme.colors.primary, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 },
   filterButtonText: { color: '#666', fontWeight: '600' },
   filterButtonTextActive: { color: '#FFF' },
 });

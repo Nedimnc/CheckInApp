@@ -6,6 +6,7 @@ import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import socket from '../services/socket';
 import SessionBlock from '../components/SessionBlock';
+import theme from '../styles/theme';
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -152,7 +153,7 @@ export default function StudentDashboardScreen({ navigation }) {
         if (!isVisible) return false;
         const matchesSearch =
           session.subject.toLowerCase().includes(filter.toLowerCase()) ||
-          users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase()) ||
+          (users.find(u => u.user_id === session.tutor_id)?.name || '').toLowerCase().includes(filter.toLowerCase()) ||
           session.title.toLowerCase().includes(filter.toLowerCase());
         return matchesSearch;
       })
@@ -196,66 +197,22 @@ export default function StudentDashboardScreen({ navigation }) {
       </TouchableOpacity>
     </View>
   );
+
 }
 
-
-
 const styles = StyleSheet.create({
-  scrollContent: { padding: 20, paddingBottom: 50 },
-  headerText: { fontSize: 30, fontWeight: 'bold', color: '#111827', marginBottom: 15 },
+  scrollContent: { padding: theme.spacing.md, paddingBottom: 50 },
+  headerText: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
   input: {
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
-    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2, shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md,
+    padding: theme.spacing.md, marginBottom: theme.spacing.md, fontSize: theme.typography.body,
   },
-  myBookingCard: { borderLeftColor: '#2E7D32', backgroundColor: '#FFF' },
-  unavailableCard: { backgroundColor: '#F5F5F5', borderLeftColor: '#c9cacf' },
-  headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
-  },
-  subjectTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', flex: 1, paddingRight: 5 },
-
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  infoText: { marginLeft: 10, color: '#555', fontSize: 15 },
-  unavailableText: { color: '#9CA3AF' },
-
-  badgeBlue: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextBlue: { color: '#1976D2', fontSize: 12, fontWeight: 'bold' },
-
-  badgeGreen: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextGreen: { color: '#2E7D32', fontSize: 12, fontWeight: 'bold' },
-
-  badgeGray: { backgroundColor: '#EEEEEE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextGray: { color: '#9E9E9E', fontSize: 12, fontWeight: 'bold' },
-
-  badgePurple: { backgroundColor: '#EDE9FE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextPurple: { color: '#5B21B6', fontSize: 12, fontWeight: 'bold' },
-
-
-  bookButton: {
-    backgroundColor: '#2D52A2', paddingVertical: 12, borderRadius: 30,
-    alignItems: 'center', width: '100%', marginTop: 10
-  },
-  bookButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  actionRow: {
-    flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1,
-    borderTopColor: '#EEE', justifyContent: 'flex-end', gap: 15
-  },
-  actionButton: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12,
-    borderRadius: 30, borderWidth: 1,
-  },
-  qrButton: { borderColor: '#CDD4FF', backgroundColor: '#F5F7FA' },
-  cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
-  actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
-
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#888' },
+  emptyText: { textAlign: 'center', marginTop: theme.spacing.lg, color: theme.colors.muted },
   floatingButtonStyle: {
     position: 'absolute', width: 60, height: 60, alignItems: 'center',
-    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2',
+    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: theme.colors.primary,
     borderRadius: 30, elevation: 5, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4
   },
-
-  animatedContainer: { position: 'absolute', width: '100%', paddingHorizontal: 2 },
+  animatedContainer: { position: 'absolute', width: '100%', paddingHorizontal: theme.spacing.xxs },
 });
