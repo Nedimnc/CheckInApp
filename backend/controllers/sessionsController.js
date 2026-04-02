@@ -259,7 +259,9 @@ export const generateQRToken = async (req, res) => {
 
 // Check-in session controller (QR Validation using JWT)
 export const checkinSession = async (req, res) => {
-  const { token, student_id } = req.body;
+  const { token, student_id: bodyStudentId } = req.body;
+  const authStudentId = req.user && req.user.id;
+  const student_id = authStudentId || bodyStudentId;
 
   try {
     // 1. Verify the "wax seal" on the token
@@ -290,7 +292,21 @@ export const checkinSession = async (req, res) => {
 
     const result = await pool.query(updateQuery, [session_id]);
 
-    res.json({ message: "Check-in successful!", session: result.rows[0] });
+    // Insert attendance record
+    const insertAttendance = `
+      INSERT INTO attendance (session_id, student_id, check_in_status)
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `;
+    const attendanceResult = await pool.query(insertAttendance, [session_id, student_id, 'present']);
+
+    const io = req.app.get('socketio');
+    if (io) {
+      io.emit('student_checked_in', { session: result.rows[0], attendance: attendanceResult.rows[0] });
+      console.log('Socket emitted: student_checked_in')
+    }
+
+    res.json({ message: "Check-in successful!", session: result.rows[0], attendance: attendanceResult.rows[0] });
   } catch (err) {
     // If the token is expired, tampered with, or fake, it drops down here
     console.error("JWT Error:", err.message);
