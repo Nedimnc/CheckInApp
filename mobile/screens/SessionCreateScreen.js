@@ -4,6 +4,7 @@ import RNDateTimePicker from '@react-native-community/datetimepicker';
 // Import updateSession here
 import { createSession, updateSession } from '../api';
 import { AuthContext } from '../context/AuthContext';
+import theme from '../styles/theme';
 
 export default function SessionCreateScreen({ route, navigation }) {
   const { user } = useContext(AuthContext);
@@ -146,7 +147,7 @@ export default function SessionCreateScreen({ route, navigation }) {
         )}
       </View>
 
-      <TouchableOpacity style={[styles.submitButton, { backgroundColor: '#2D52A2' }]} onPress={handleSubmit}>
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitText}>{isPreFilled ? (isEditMode ? 'Save Changes' : 'Create Copy') : 'Create Session'}</Text>
       </TouchableOpacity>
     </View>
@@ -154,17 +155,17 @@ export default function SessionCreateScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  card: { flex: 1, backgroundColor: '#FFF', padding: 24 },
-  headerText: { fontSize: 26, fontWeight: 'bold', color: '#111827', marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#4B5563', marginBottom: 6 },
-  input: { backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 12, marginBottom: 20, fontSize: 16 },
-  submitButton: { paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 20, marginBottom: 50 },
-  submitText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  card: { flex: 1, backgroundColor: theme.colors.card, padding: theme.spacing.md },
+  headerText: { fontSize: theme.typography.h2, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.lg },
+  label: { fontSize: theme.typography.caption, fontWeight: '600', color: theme.colors.textSecondary, marginBottom: 6 },
+  input: { backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md, padding: theme.spacing.sm, marginBottom: theme.spacing.lg, fontSize: theme.typography.body },
+  submitButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.md, alignItems: 'center', marginTop: theme.spacing.md, marginBottom: 50, backgroundColor: theme.colors.primary },
+  submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold' },
   form: { flex: 1 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
-  timeCard: { width: '30%', padding: 10, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center' },
-  activeCard: { borderColor: "#2D52A2", backgroundColor: "#E9EFFD" },
-  activeEndCard: { borderColor: "#4CAF50", backgroundColor: "#E8F5E9" },
-  cardLabel: { fontSize: 12, fontWeight: '700', marginBottom: 4 },
-  timeValue: { fontSize: 12, color: '#666' }
+  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.lg },
+  timeCard: { width: '30%', padding: theme.spacing.sm, borderRadius: theme.radii.md, borderWidth: 1, borderColor: theme.colors.border, alignItems: 'center' },
+  activeCard: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
+  activeEndCard: { borderColor: theme.colors.success, backgroundColor: '#E8F5E9' },
+  cardLabel: { fontSize: theme.typography.caption, fontWeight: '700', marginBottom: 4 },
+  timeValue: { fontSize: theme.typography.caption, color: theme.colors.textSecondary }
 });

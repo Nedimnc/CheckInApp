@@ -3,6 +3,7 @@ import { View, Text, Button, StyleSheet, TextInput, TouchableOpacity, ScrollView
 import { registerUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
+import theme from '../styles/theme';
 
 
 export default function RegisterScreen({ navigation }) {
@@ -14,8 +15,8 @@ export default function RegisterScreen({ navigation }) {
   const [role, setRole] = useState('student'); // Default role
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const primaryColor = role === 'student' ? '#2D52A2' : '#4CAF50';
-  const lightBg = role === 'student' ? '#E9EFFD' : '#E8F5E9';
+  const primaryColor = role === 'student' ? theme.colors.primary : theme.colors.success;
+  const lightBg = role === 'student' ? theme.colors.primaryLight : '#E8F5E9';
 
   const handleRegister = async () => {
     if (!name || !email || !password || !panther_id) {
@@ -54,22 +55,22 @@ export default function RegisterScreen({ navigation }) {
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === 'student' && { borderColor: '#2D52A2', backgroundColor: lightBg }
+                role === 'student' && { borderColor: theme.colors.primary, backgroundColor: lightBg }
               ]}
               onPress={() => setRole('student')}
             >
               <Text style={styles.icon}>🎒</Text>
-              <Text style={[styles.roleText, role === 'student' && { color: '#2D52A2' }]}>Student</Text>
+              <Text style={[styles.roleText, role === 'student' && { color: theme.colors.primary }]}>Student</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.roleButton,
-                role === 'tutor' && { borderColor: '#4CAF50', backgroundColor: lightBg }
+                role === 'tutor' && { borderColor: theme.colors.success, backgroundColor: lightBg }
               ]}
               onPress={() => setRole('tutor')}
             >
               <Text style={styles.icon}>📖</Text>
-              <Text style={[styles.roleText, role === 'tutor' && { color: '#4CAF50' }]}>Tutor</Text>
+              <Text style={[styles.roleText, role === 'tutor' && { color: theme.colors.success }]}>Tutor</Text>
             </TouchableOpacity>
           </View>
           {/* Input form */}
@@ -132,24 +133,24 @@ export default function RegisterScreen({ navigation }) {
 };
 
 const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 20, paddingBottom: 20, },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: theme.spacing.md, paddingBottom: theme.spacing.lg, },
   card: {
-    backgroundColor: '#FFF', borderRadius: 24, padding: 24, width: '100%', shadowColor: '#000',
+    backgroundColor: theme.colors.card, borderRadius: theme.radii.lg, padding: theme.spacing.md, width: '100%', shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5, },
-  header: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: '#333', },
-  roleContainer: { flexDirection: 'row', gap: 12, marginBottom: 24, },
+  header: { fontSize: theme.typography.h2, fontWeight: 'bold', textAlign: 'center', marginBottom: theme.spacing.lg, color: theme.colors.text, },
+  roleContainer: { flexDirection: 'row', marginBottom: theme.spacing.lg, },
   roleButton: {
-    flex: 1, padding: 16, borderRadius: 12, borderWidth: 2,
-    borderColor: '#E1E8ED', alignItems: 'center', justifyContent: 'center', },
+    flex: 1, padding: theme.spacing.md, borderRadius: theme.radii.md, borderWidth: 2,
+    borderColor: theme.colors.border, alignItems: 'center', justifyContent: 'center', marginRight: theme.spacing.sm },
   roleText: { fontWeight: '600', color: '#888', },
   icon: { fontSize: 24, marginBottom: 4, },
   form: { width: '100%', },
-  label: { fontSize: 14, fontWeight: '600', color: '#666', marginBottom: 6, marginLeft: 4, },
+  label: { fontSize: theme.typography.caption, fontWeight: '600', color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 4, },
   input: {
-    flex: 1, backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB',
-    borderRadius: 10, padding: 12, marginBottom: 16, fontSize: 16, },
-  submitButton: { paddingVertical: 16, borderRadius: 100, alignItems: 'center', marginTop: 10, },
-  submitText: { color: '#FFF', fontSize: 18, fontWeight: 'bold', },
+    flex: 1, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: theme.radii.md, padding: theme.spacing.sm, marginBottom: theme.spacing.md, fontSize: theme.typography.body, },
+  submitButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.lg, alignItems: 'center', marginTop: theme.spacing.sm, },
+  submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold', },
   inputContainer: { flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', },
-  eyeIcon: { position: 'absolute', right: 15, height: '70%', justifyContent: 'top', },
+  eyeIcon: { position: 'absolute', right: 15, height: '70%', justifyContent: 'center', },
 });

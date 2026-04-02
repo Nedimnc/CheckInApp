@@ -3,6 +3,7 @@ import { Text, View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { checkinSession } from '../api'; // Import our API call
 import { AuthContext } from '../context/AuthContext'; // Import Auth to get student ID
+import theme from '../styles/theme';
 
 export default function ScannerScreen({ navigation }) {
   const { user } = useContext(AuthContext); // Get the logged-in student
@@ -89,8 +90,8 @@ export default function ScannerScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: 'column', justifyContent: 'center' },
   overlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', alignItems: 'center' },
-  scanBox: { width: 250, height: 250, borderWidth: 2, borderColor: '#FFF', backgroundColor: 'transparent', borderRadius: 20 },
-  instruction: { marginTop: 20, color: 'white', fontSize: 18, fontWeight: 'bold', backgroundColor: 'rgba(0,0,0,0.5)', padding: 10, borderRadius: 5 },
-  closeButton: { position: 'absolute', bottom: 50, alignSelf: 'center', backgroundColor: 'white', padding: 15, borderRadius: 30 },
-  closeText: { color: 'black', fontSize: 16, fontWeight: 'bold' }
+  scanBox: { width: 250, height: 250, borderWidth: 2, borderColor: theme.colors.card === '#FFFFFF' ? '#FFF' : theme.colors.primary, backgroundColor: 'transparent', borderRadius: theme.radii.lg },
+  instruction: { marginTop: theme.spacing.md, color: theme.colors.card === '#FFFFFF' ? 'white' : theme.colors.text, fontSize: theme.typography.h3, fontWeight: 'bold', backgroundColor: 'rgba(0,0,0,0.5)', padding: theme.spacing.sm, borderRadius: theme.radii.sm },
+  closeButton: { position: 'absolute', bottom: 50, alignSelf: 'center', backgroundColor: theme.colors.card, padding: theme.spacing.md, borderRadius: theme.radii.lg },
+  closeText: { color: theme.colors.text, fontSize: theme.typography.body, fontWeight: 'bold' }
 });

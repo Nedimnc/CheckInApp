@@ -5,6 +5,7 @@ import { getStudentStats, getTutorStats } from '../api';
 import { BarChart } from "react-native-gifted-charts";
 import { useIsFocused } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
+import theme from '../styles/theme';
 
 export default function Profile({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -132,34 +133,32 @@ export default function Profile({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, padding: 20 },
-  headerText: { fontSize: 35, fontWeight: 'bold' },
-  subsectionText: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
-  profileSection: { flexDirection: 'row', alignItems: 'center', padding: 10, marginBottom: 30 },
+  content: { flex: 1, padding: theme.spacing.md },
+  headerText: { fontSize: theme.typography.h1, fontWeight: 'bold' },
+  subsectionText: { fontSize: theme.typography.h2, fontWeight: 'bold', marginBottom: theme.spacing.lg },
+  profileSection: { flexDirection: 'row', alignItems: 'center', padding: theme.spacing.sm, marginBottom: theme.spacing.lg },
   bottomContent: { marginTop: 'auto' },
-  logoutButton: { paddingVertical: 16, borderRadius: 30, alignItems: 'center', backgroundColor: '#D9534F', marginBottom: 'auto' },
-  logoutText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#bbbec2', justifyContent: 'center', alignItems: 'center', marginRight: 30 },
+  logoutButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.lg, alignItems: 'center', backgroundColor: theme.colors.danger, marginBottom: 'auto' },
+  logoutText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold' },
+  avatar: { width: 100, height: 100, borderRadius: 50, backgroundColor: '#bbbec2', justifyContent: 'center', alignItems: 'center', marginRight: theme.spacing.lg },
   avatarText: { fontSize: 50 },
-  nameText: { fontSize: 26, fontWeight: '500' },
+  nameText: { fontSize: theme.typography.h2, fontWeight: '500' },
   learningStats: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   statCard: {
-    width: '48%', height: 200, backgroundColor: '#FFF', borderRadius: 16,
-    padding: 20, marginBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, flexDirection: 'column',
-    borderLeftWidth: 4, borderLeftColor: '#2D52A2',
+    width: '48%', height: 200, ...theme.common.card,
+    padding: theme.spacing.lg, marginBottom: theme.spacing.lg, flexDirection: 'column',
+    borderLeftWidth: 4, borderLeftColor: theme.colors.primary,
   },
-  cardHeader: { marginBottom: 'auto', fontSize: 20, fontWeight: '600' },
-  cardInfo: { fontSize: 28, fontWeight: 'bold' },
-  cardSubtext: { marginTop: 'auto', fontSize: 15, color: '#7d7d7d' },
+  cardHeader: { marginBottom: 'auto', fontSize: theme.typography.h3, fontWeight: '600' },
+  cardInfo: { fontSize: theme.typography.h1, fontWeight: 'bold' },
+  cardSubtext: { marginTop: 'auto', fontSize: theme.typography.body, color: theme.colors.muted },
   accInfoContainer: {
-    height: 100, backgroundColor: '#FFF', borderRadius: 16, padding: 20,
-    marginBottom: 30, shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2',
+    height: 100, ...theme.common.card, padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg, borderLeftWidth: 5, borderLeftColor: theme.colors.primary,
   },
   accountInfo: { flex: 1, flexDirection: 'column', justifyContent: 'space-between' },
   infoField: { flexDirection: 'row', justifyContent: 'space-between' },
-  accountInfoText: { fontSize: 16, fontWeight: '600', color: '#8e8e8e' },
-  accountInfoField: { fontSize: 16, fontWeight: '500' },
-  separator: { height: 1, backgroundColor: '#E0E0E0' },
+  accountInfoText: { fontSize: theme.typography.body, fontWeight: '600', color: theme.colors.textSecondary },
+  accountInfoField: { fontSize: theme.typography.body, fontWeight: '500' },
+  separator: { height: 1, backgroundColor: theme.colors.border },
 });

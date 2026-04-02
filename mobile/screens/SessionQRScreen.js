@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { getQRToken } from '../api'; // Import API call
+import theme from '../styles/theme';
 
 export default function SessionQRScreen({ route, navigation }) {
   // Get the session data passed from the button click
@@ -29,7 +30,7 @@ export default function SessionQRScreen({ route, navigation }) {
   }, [session.session_id]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.primary }]}> 
       <View style={styles.card}>
         <Text style={styles.title}>Session Check-In</Text>
         <Text style={styles.subtitle}>{session.subject}</Text>
@@ -37,7 +38,7 @@ export default function SessionQRScreen({ route, navigation }) {
         {/* Show a spinner while loading, then show the QR Code */}
         <View style={styles.qrContainer}>
           {loading ? (
-            <ActivityIndicator size="large" color="#2D52A2" style={{ margin: 50 }} />
+            <ActivityIndicator size="large" color={theme.colors.primary} style={{ margin: 50 }} />
           ) : token ? (
             <QRCode
               value={token} // Encrypted JWT
@@ -63,12 +64,12 @@ export default function SessionQRScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2D52A2', padding: 20 },
-  card: { backgroundColor: 'white', padding: 30, borderRadius: 20, alignItems: 'center', width: '100%', maxWidth: 350, elevation: 5 },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#2D52A2', marginBottom: 5 },
-  subtitle: { fontSize: 18, color: '#666', marginBottom: 30 },
-  qrContainer: { padding: 10, borderWidth: 1, borderColor: '#EEE', borderRadius: 10, marginBottom: 30, minHeight: 270, minWidth: 270, justifyContent: 'center', alignItems: 'center' },
-  instruction: { textAlign: 'center', color: '#888', fontSize: 14 },
-  closeButton: { marginTop: 40, paddingVertical: 15, paddingHorizontal: 40, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 30 },
-  closeText: { color: 'white', fontSize: 16, fontWeight: 'bold' }
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.md },
+  card: { backgroundColor: theme.colors.card, padding: theme.spacing.lg, borderRadius: theme.radii.lg, alignItems: 'center', width: '100%', maxWidth: 350, elevation: 5 },
+  title: { fontSize: theme.typography.h3, fontWeight: 'bold', color: theme.colors.primary, marginBottom: theme.spacing.sm },
+  subtitle: { fontSize: theme.typography.body, color: theme.colors.textSecondary, marginBottom: theme.spacing.lg },
+  qrContainer: { padding: theme.spacing.sm, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.sm, marginBottom: theme.spacing.lg, minHeight: 270, minWidth: 270, justifyContent: 'center', alignItems: 'center' },
+  instruction: { textAlign: 'center', color: theme.colors.muted, fontSize: theme.typography.caption },
+  closeButton: { marginTop: theme.spacing.lg, paddingVertical: theme.spacing.md, paddingHorizontal: theme.spacing.lg, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: theme.radii.lg },
+  closeText: { color: 'white', fontSize: theme.typography.body, fontWeight: 'bold' }
 });
