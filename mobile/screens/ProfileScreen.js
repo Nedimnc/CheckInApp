@@ -146,8 +146,8 @@ const styles = StyleSheet.create({
   learningStats: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   statCard: {
     width: '48%', height: 200, ...theme.common.card,
-    padding: theme.spacing.lg, marginBottom: theme.spacing.lg, flexDirection: 'column',
-    borderLeftWidth: 4, borderLeftColor: theme.colors.primary,
+    padding: theme.spacing.md, marginBottom: theme.spacing.lg, flexDirection: 'column',
+    borderLeftWidth: 5, borderLeftColor: theme.colors.primary,
   },
   cardHeader: { marginBottom: 'auto', fontSize: theme.typography.h3, fontWeight: '600' },
   cardInfo: { fontSize: theme.typography.h1, fontWeight: 'bold' },

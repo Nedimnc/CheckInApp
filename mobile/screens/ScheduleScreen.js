@@ -273,7 +273,7 @@ export default function Schedule({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: theme.spacing.md },
+  container: { flex: 1 },
   headerTitle: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
   calendarContainer: { marginBottom: theme.spacing.lg, borderRadius: theme.radii.md, overflow: 'hidden', elevation: 3, backgroundColor: theme.colors.card },
   sectionTitle: { fontSize: theme.typography.h3, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },

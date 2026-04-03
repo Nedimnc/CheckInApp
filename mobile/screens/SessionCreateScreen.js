@@ -125,7 +125,7 @@ export default function SessionCreateScreen({ route, navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={[styles.timeCard, chooseTimeDate === 'End' && styles.activeEndCard]} 
+            style={[styles.timeCard, chooseTimeDate === 'End' && styles.activeCard]} 
             onPress={() => { setChooseTimeDate('End'); setMode('time'); setShowDatePicker(true); setInlineDisplay('spinner'); }}
           >
             <Text style={styles.cardLabel}>End</Text>
@@ -164,8 +164,7 @@ const styles = StyleSheet.create({
   form: { flex: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: theme.spacing.lg },
   timeCard: { width: '30%', padding: theme.spacing.sm, borderRadius: theme.radii.md, borderWidth: 1, borderColor: theme.colors.border, alignItems: 'center' },
-  activeCard: { borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight },
-  activeEndCard: { borderColor: theme.colors.success, backgroundColor: '#E8F5E9' },
+  activeCard: { borderColor: theme.colors.primary, backgroundColor: '#F5F7FA'},
   cardLabel: { fontSize: theme.typography.caption, fontWeight: '700', marginBottom: 4 },
   timeValue: { fontSize: theme.typography.caption, color: theme.colors.textSecondary }
 });
