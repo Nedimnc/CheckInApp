@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useContext } from 'react';
 import { useAutoSync } from './useAutoSync';
 import { NavigationContainer } from '@react-navigation/native';

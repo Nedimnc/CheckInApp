@@ -4,6 +4,10 @@ import { CameraView, Camera } from 'expo-camera';
 import { checkinSession } from '../api'; // Import our API call
 import { AuthContext } from '../context/AuthContext'; // Import Auth to get student ID
 import theme from '../styles/theme';
+import NetInfo from '@react-native-community/netinfo'; // Offline detection
+import * as SecureStore from 'expo-secure-store';       
+import 'react-native-get-random-values';                
+import { v4 as uuidv4 } from 'uuid';                   // Generates offline_uuid
 
 export default function ScannerScreen({ navigation }) {
   const { user } = useContext(AuthContext); // Get the logged-in student
@@ -39,10 +43,38 @@ export default function ScannerScreen({ navigation }) {
         throw new Error("Invalid QR Code.");
       }
 
-      // 2. Hit the backend to securely check them in
+      // 2. ADDED: Check network status before attempting check-in
+      const netState = await NetInfo.fetch();
+      const isOnline = netState.isConnected && netState.isInternetReachable;
+
+      if (!isOnline) {
+        // ADDED: Offline flow — decode session_id from token and save to local queue
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const newCheckin = {
+          user_id: user.user_id,
+          session_id: payload.session_id,
+          offline_uuid: uuidv4(),
+          check_in_time: new Date().toISOString(),
+        };
+
+        // Load existing queue, push new item, save back
+        const existing = await SecureStore.getItemAsync('checkins');
+        const queue = existing ? JSON.parse(existing) : [];
+        queue.push(newCheckin);
+        await SecureStore.setItemAsync('checkins', JSON.stringify(queue));
+
+        Alert.alert(
+          "📶 Offline — Check-In Queued",
+          "You're not connected to the internet. Your check-in has been saved and will sync automatically when you reconnect.",
+          [{ text: "OK", onPress: () => navigation.goBack() }]
+        );
+        return; // Exit early — skip the API call
+      }
+
+      // 3. Hit the backend to securely check them in (online flow — unchanged)
       await checkinSession(token, user.user_id);
 
-      // 3. Show message and go back to dashboard
+      // 4. Show message and go back to dashboard
       Alert.alert(
         "Check-In Successful!",
         "You have been securely checked into your tutoring session.",
@@ -50,7 +82,7 @@ export default function ScannerScreen({ navigation }) {
       );
 
     } catch (error) {
-      // 4. Failure (Not booked, expired token, etc.)
+      // 5. Failure (Not booked, expired token, etc.)
       const errorMsg = error.message || "Could not check in. Please try again.";
       Alert.alert("Check-In Failed", errorMsg, [
         {

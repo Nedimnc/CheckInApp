@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import socket from '../services/socket';
 import SessionBlock from '../components/SessionBlock';
 import theme from '../styles/theme';
+import NetInfo from '@react-native-community/netinfo'; // Offline detection
+import * as SecureStore from 'expo-secure-store';       // Read pending queue count
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -16,6 +18,37 @@ export default function StudentDashboardScreen({ navigation }) {
   const isFocused = useIsFocused();
   const [users, setUsers] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);    // ADDED
+  const [pendingCount, setPendingCount] = useState(0);  // ADDED
+
+  // Subscribe to network state for the offline banner
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOffline(!(state.isConnected && state.isInternetReachable));
+    });
+    return () => unsubscribe();
+  }, []);
+
+    // Refresh pending badge whenever screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      SecureStore.getItemAsync('checkins').then((data) => {
+        const queue = data ? JSON.parse(data) : [];
+        setPendingCount(queue.length);
+      });
+    }
+  }, [isFocused]);
+
+  // Poll every 3 seconds to clear badge/banner once sync completes in background 
+  useEffect(() => {
+    if (pendingCount === 0) return;
+    const interval = setInterval(async () => {
+      const data = await SecureStore.getItemAsync('checkins');
+      const queue = data ? JSON.parse(data) : [];
+      if (queue.length === 0) setPendingCount(0);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pendingCount]);
 
   useEffect(() => {
     if (isFocused) {
@@ -164,6 +197,24 @@ export default function StudentDashboardScreen({ navigation }) {
 
   return (
     <View style={{ flex: 1 }}>
+      {/* Offline banner */}
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={16} color="#fff" />
+          <Text style={styles.offlineBannerText}>
+            Offline Mode — Scans will be queued{pendingCount > 0 ? ` (${pendingCount} pending)` : ''}
+          </Text>
+        </View>
+      )}
+
+      {/* Back online with pending items */}
+      {!isOffline && pendingCount > 0 && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="sync-outline" size={16} color="#1976D2" />
+          <Text style={styles.pendingBannerText}>Syncing {pendingCount} queued check-in{pendingCount > 1 ? 's' : ''}...</Text>
+        </View>
+      )}
+
       <FlatList
         data={filteredSessions}
         keyExtractor={(item) => item.session_id.toString()}
@@ -194,6 +245,8 @@ export default function StudentDashboardScreen({ navigation }) {
       />
       <TouchableOpacity style={styles.floatingButtonStyle} onPress={() => navigation.navigate('Scanner')}>
         <Ionicons name="qr-code-outline" size={30} color="white" />
+        {/* Red dot badge when there are pending check-ins */}
+        {pendingCount > 0 && <View style={styles.badgeDot} />}
       </TouchableOpacity>
     </View>
   );
@@ -201,6 +254,23 @@ export default function StudentDashboardScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  // ADDED: offline/pending banners
+  offlineBanner: {
+    backgroundColor: '#B71C1C', flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', paddingVertical: 8, gap: 6,
+  },
+  offlineBannerText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  pendingBanner: {
+    backgroundColor: '#E3F2FD', flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', paddingVertical: 8, gap: 6,
+  },
+  pendingBannerText: { color: '#1976D2', fontSize: 13, fontWeight: '600' },
+  // ADDED: badge dot on floating button
+  badgeDot: {
+    position: 'absolute', top: 8, right: 8, width: 12, height: 12,
+    borderRadius: 6, backgroundColor: '#D32F2F', borderWidth: 2, borderColor: '#fff',
+  },
+
   scrollContent: { padding: theme.spacing.md, paddingBottom: 50 },
   headerText: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
   input: {
