@@ -160,3 +160,12 @@ export const getTutorStats = async (userID) => {
     throw error.response?.data || error.message;
   }
 };
+
+export const syncAttendance = async (checkins) => {
+  try {
+    const response = await api.post('/attendance/sync', { checkins });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

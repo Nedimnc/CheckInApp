@@ -63,4 +63,56 @@ export const createAttendance = async (req, res) => {
   }
 };
 
-export default { getAttendanceByStudent, getAttendanceBySession, createAttendance };
+export const syncAttendance = async (req, res) => {
+  const { checkins } = req.body; // Expecting an array of { user_id, session_id, offline_uuid, check_in_time }
+  const authenticatedUserId = Number(req.user.id);
+
+  if (!Array.isArray(checkins) || checkins.length === 0) {
+    return res.status(400).json({ error: 'No check-ins provided' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Validate session ownership for the first check-in
+    for (const checkin of checkins) {
+      if (Number(checkin.user_id) !== authenticatedUserId) {
+        return res.status(403).json({ error: 'Unauthorized: Check-in does not belong to the authenticated user' });
+      }
+
+      // Insert attendance record, ignoring duplicates based on offline_uuid
+      const attendanceQuery = `
+      INSERT INTO attendance (session_id, student_id, check_in_time, offline_uuid)
+      VALUES ($1, $2, $3, $4)
+      ON CONFLICT (offline_uuid) DO NOTHING`;
+      await client.query(attendanceQuery, [checkin.session_id, checkin.user_id, checkin.check_in_time, checkin.offline_uuid]);
+
+      // Update session status to 'checked_in' if it was 'booked'
+      const sessionUpdateQuery = `
+      UPDATE sessions
+      SET status = 'checked_in'
+      WHERE session_id = $1 AND status = 'booked'`;
+      await client.query(sessionUpdateQuery, [checkin.session_id]);
+
+
+    }
+
+    // All operations were successful
+    await client.query('COMMIT');
+    res.status(201).json({
+      success: true,
+      message: 'Offline check-ins synced successfully',
+      count: checkins.length
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Batch Sync Error:', err.message);
+    res.status(500).json({ message: 'Server error during sync' });
+  } finally {
+    client.release();
+  }
+};
+
+export default { getAttendanceByStudent, getAttendanceBySession, createAttendance, syncAttendance };

@@ -6,13 +6,18 @@ import requireOwner from '../middleware/requireOwner.js';
 
 const router = Router();
 
+router.use(authenticateToken);
+
 // GET /api/attendance/student/:student_id
-router.get('/student/:student_id', authenticateToken, requireRole('student'), requireOwner({ resource: 'student' }), attendanceController.getAttendanceByStudent);
+router.get('/student/:student_id', requireRole('student'), requireOwner({ resource: 'student' }), attendanceController.getAttendanceByStudent);
 
 // GET /api/attendance/session/:session_id
-router.get('/session/:session_id', authenticateToken, requireRole('tutor'), requireOwner({ resource: 'session', param: 'session_id', inBody: false }), attendanceController.getAttendanceBySession);
+router.get('/session/:session_id', requireRole('tutor'), requireOwner({ resource: 'session', param: 'session_id', inBody: false }), attendanceController.getAttendanceBySession);
 
 // POST /api/attendance
-router.post('/', authenticateToken, requireRole('tutor'), requireOwner({ resource: 'session', param: 'session_id', inBody: true }), attendanceController.createAttendance);
+router.post('/', requireRole('tutor'), requireOwner({ resource: 'session', param: 'session_id', inBody: true }), attendanceController.createAttendance);
+
+// POST /api/attendance/sync
+router.post('/sync', attendanceController.syncAttendance);
 
 export default router;
