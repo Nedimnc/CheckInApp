@@ -1,4 +1,5 @@
 import React, { useContext } from 'react';
+import { useAutoSync } from './useAutoSync';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -98,9 +99,11 @@ function RootNavigation() {
 }
 
 export default function App() {
+  useAutoSync();
   return (
     <AuthProvider>
       <RootNavigation />
     </AuthProvider>
   );
 }
+
