@@ -75,6 +75,8 @@ export const syncAttendance = async (req, res) => {
   try {
     await client.query('BEGIN');
 
+    const syncedData = [];
+
     // Validate session ownership for the first check-in
     for (const checkin of checkins) {
       if (Number(checkin.user_id) !== authenticatedUserId) {
@@ -86,16 +88,30 @@ export const syncAttendance = async (req, res) => {
       INSERT INTO attendance (session_id, student_id, check_in_time, offline_uuid)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (offline_uuid) DO NOTHING`;
-      await client.query(attendanceQuery, [checkin.session_id, checkin.user_id, checkin.check_in_time, checkin.offline_uuid]);
+      const attendanceResult = await client.query(attendanceQuery, [checkin.session_id, checkin.user_id, checkin.check_in_time, checkin.offline_uuid]);
 
       // Update session status to 'checked_in' if it was 'booked'
       const sessionUpdateQuery = `
       UPDATE sessions
       SET status = 'checked_in'
-      WHERE session_id = $1 AND status = 'booked'`;
-      await client.query(sessionUpdateQuery, [checkin.session_id]);
+      WHERE session_id = $1 RETURNING *`;
+      const sessionResult = await client.query(sessionUpdateQuery, [checkin.session_id]);
 
+      if (sessionResult.rows.length > 0) {
+        syncedData.push({
+          session: sessionResult.rows[0],
+          attendance: attendanceResult.rows[0]
+        });
+      }
 
+      const io = req.app.get('socketio');
+      if (io) {
+        if (syncedData.length > 0) {
+          syncedData.forEach((item, index) => {
+            io.emit('student_checked_in', item);
+          });
+        }
+      }
     }
 
     // All operations were successful

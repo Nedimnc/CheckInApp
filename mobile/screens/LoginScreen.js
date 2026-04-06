@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { AuthContext } from '../context/AuthContext';
 import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen({ navigation }) {
   const headerHeight = useHeaderHeight();
@@ -16,9 +17,23 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = async (role) => {
     try {
       const loggedInUser = await login(email, password);
-      Alert.alert('Login Successful', `Welcome back, ${loggedInUser.name}!`);
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'greeting',
+          text1: 'Login Successful!',
+          text2: `Welcome back, ${loggedInUser.name}!`
+        });
+      }, 500);
     } catch (error) {
-      Alert.alert('Login Failed', error.message || "Check your credentials and try again.");
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: error.message || "Check your credentials and try again."
+        });
+      }, 500);
     }
   };
 
@@ -102,13 +117,15 @@ const styles = StyleSheet.create({
   scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: theme.spacing.md, },
   card: {
     backgroundColor: theme.colors.card, borderRadius: theme.radii.lg, padding: theme.spacing.md, width: '100%', shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5, },
+    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5,
+  },
   header: { fontSize: theme.typography.h2, fontWeight: 'bold', textAlign: 'center', marginBottom: theme.spacing.lg, color: theme.colors.text, },
   icon: { fontSize: 24, marginBottom: 4, },
   label: { fontSize: theme.typography.caption, fontWeight: '600', color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 4, },
   input: {
     flex: 1, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
-    borderRadius: theme.radii.md, padding: theme.spacing.sm, marginBottom: theme.spacing.sm, fontSize: theme.typography.body, },
+    borderRadius: theme.radii.md, padding: theme.spacing.sm, marginBottom: theme.spacing.sm, fontSize: theme.typography.body,
+  },
   submitButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.lg, alignItems: 'center', marginTop: theme.spacing.sm, },
   submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold', },
   inputContainer: { flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', },

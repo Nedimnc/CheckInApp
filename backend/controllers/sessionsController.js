@@ -133,7 +133,11 @@ export const cancelSession = async (req, res) => {
       return res.status(403).json({ message: "You are not authorized to delete this session" });
     }
 
-    // 3. Delete it
+    // 3.1 Delete associated attendance records first (if any) to maintain referential integrity
+    const deleteAttendanceQuery = 'DELETE FROM attendance WHERE session_id = $1';
+    await pool.query(deleteAttendanceQuery, [session_id]);
+
+    // 3.2 Delete it
     const deleteQuery = 'DELETE FROM sessions WHERE session_id = $1 RETURNING *';
     await pool.query(deleteQuery, [session_id]);
 

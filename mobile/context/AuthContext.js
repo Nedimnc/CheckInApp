@@ -3,6 +3,8 @@ import * as SecureStore from 'expo-secure-store';
 import api, { loginUser } from '../api';
 import { Alert } from 'react-native';
 import socket from '../services/socket';
+import Toast from 'react-native-toast-message';
+import { Ionicons } from '@expo/vector-icons';
 
 export const AuthContext = createContext();
 
@@ -20,6 +22,14 @@ export const AuthProvider = ({ children }) => {
         if (token && savedUser) {
           console.log("Found saved token on startup");
           setUser(JSON.parse(savedUser));
+          Toast.hide();
+          setTimeout(() => {
+            Toast.show({
+              type: 'greeting',
+              text1: 'Welcome Back!',
+              text2: `Good to see you again, ${JSON.parse(savedUser).name}!`
+            });
+          }, 500);
         }
       } catch (error) {
         console.log("Error reading token", error);
@@ -60,9 +70,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    console.log('Clearing token, disconnecting socket, and logging out');
+    console.log('Clearing local storage, disconnecting socket, and logging out');
     await SecureStore.deleteItemAsync('userToken');
     await SecureStore.deleteItemAsync('userData');
+    await SecureStore.deleteItemAsync('checkins');
     socket.disconnect();
     setUser(null);
   };
@@ -71,7 +82,8 @@ export const AuthProvider = ({ children }) => {
     const interceptor = api.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response && (error.response.status === 403 || error.response.status === 401)) {
+        const isLoginRequest = error.config.url.includes('/auth/login');
+        if (error.response && (error.response.status === 403 || error.response.status === 401) && !isLoginRequest) {
           if (isAlertVisible) {
             return Promise.reject(error);
           }

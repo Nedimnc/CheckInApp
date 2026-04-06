@@ -1,10 +1,11 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Platform, Alert } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Platform, Alert, LayoutAnimation } from 'react-native';
 import RNDateTimePicker from '@react-native-community/datetimepicker';
 // Import updateSession here
 import { createSession, updateSession } from '../api';
 import { AuthContext } from '../context/AuthContext';
 import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function SessionCreateScreen({ route, navigation }) {
   const { user } = useContext(AuthContext);
@@ -58,11 +59,25 @@ export default function SessionCreateScreen({ route, navigation }) {
 
   const handleSubmit = async () => {
     if (!title || !subject || !location) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Missing Fields',
+          text2: 'Please fill in all fields before submitting.'
+        });
+      }, 500);
       return;
     }
     if (endDate <= startDate) {
-      Alert.alert('Error', 'End time must be after start time');
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid Time',
+          text2: 'End time must be after start time.'
+        });
+      }, 500);
       return;
     }
 
@@ -80,15 +95,36 @@ export default function SessionCreateScreen({ route, navigation }) {
       if (isEditMode) {
         // UPDATE Existing
         await updateSession(sessionToEdit.session_id, sessionData);
-        Alert.alert('Success', 'Session updated successfully!');
+        Toast.hide();
+        setTimeout(() => {
+          Toast.show({
+            type: 'success',
+            text1: 'Session Updated',
+            text2: "Your changes have been saved."
+          });
+        }, 500);
       } else {
         // CREATE New
         await createSession(sessionData);
-        Alert.alert('Success', 'Session created successfully!');
+        Toast.hide();
+        setTimeout(() => {
+          Toast.show({
+            type: 'success',
+            text1: 'Session Created',
+            text2: "Your session has been created."
+          });
+        }, 500);
       }
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Error', error.message || 'Operation failed');
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: error.message || 'An error occurred. Please try again.'
+        });
+      }, 500);
     }
   };
 
