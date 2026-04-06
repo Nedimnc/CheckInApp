@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import NetInfo from '@react-native-community/netinfo';
 import * as SecureStore from 'expo-secure-store';
-import { syncAttendance } from './api';
+import { syncAttendance } from '../api';
 
 export const useAutoSync = () => {
   useEffect(() => {

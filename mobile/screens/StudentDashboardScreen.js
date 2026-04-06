@@ -9,6 +9,7 @@ import SessionBlock from '../components/SessionBlock';
 import theme from '../styles/theme';
 import NetInfo from '@react-native-community/netinfo'; // Offline detection
 import * as SecureStore from 'expo-secure-store';       // Read pending queue count
+import Toast from 'react-native-toast-message';
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -136,15 +137,28 @@ export default function StudentDashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               await bookSession(session.session_id, user.user_id);
-              Alert.alert("Success", "You have booked this session!");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Booked',
+                  text2: `You have successfully booked ${session.subject}.`
+                });
+              }, 500);
             } catch (error) {
               const serverMessage = error.message || 'Could not complete the request.';
               if (serverMessage.includes("Invalid token")) {
                 console.log("Auth error caught via string matching - silencing local alert.");
                 return;
               }
-
-              Alert.alert("Action Failed", serverMessage);
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Action Failed.',
+                  text2: `${serverMessage}`
+                });
+              }, 500);
             }
           }
         }
@@ -160,14 +174,24 @@ export default function StudentDashboardScreen({ navigation }) {
         { text: "No", style: "cancel" },
         {
           text: "Yes, Unbook", style: 'destructive',
-
           onPress: async () => {
             try {
               await unbookSession(session.session_id, user.user_id);
-              Alert.alert("Success", "You have been removed from this session.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Unbooked',
+                  text2: `You have successfully unbooked ${session.subject}.`
+                });
+              }, 500);
             } catch (error) {
               if (error.response && error.response.status !== 403 && error.response.status !== 401) {
-                Alert.alert("Error", "Something went wrong. Please try again.");
+                Toast.show({
+                  type: 'error',
+                  text1: 'Unbooking Failed',
+                  text2: `Could not unbook ${session.subject}. Please try again.`
+                });
               }
             }
           }

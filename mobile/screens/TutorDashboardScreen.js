@@ -8,6 +8,7 @@ import { useIsFocused } from '@react-navigation/native';
 import socket from '../services/socket';
 import SessionBlock from '../components/SessionBlock';
 import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function TutorDashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -41,13 +42,24 @@ export default function TutorDashboardScreen({ navigation }) {
         }
       });
     };
+    const handleCheckIn = (data) => {
+      const { session } = data;
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev =>
+          prev.map(s => s.session_id === session.session_id ? session : s)
+        );
+      });
+    };
 
     socket.on('session_booked', handleBooked);
     socket.on('session_unbooked', handleUnbooked);
+    socket.on('student_checked_in', handleCheckIn);
 
     return () => {
       socket.off('session_booked', handleBooked);
       socket.off('session_unbooked', handleUnbooked);
+      socket.off('student_checked_in', handleCheckIn);
     };
   }, [user.user_id]);
 
@@ -84,10 +96,25 @@ export default function TutorDashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               await cancelSession(sessionId, user.user_id);
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
               setSessions(prev => prev.filter(s => s.session_id !== sessionId));
-              Alert.alert("Success", "Session cancelled.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Cancelled',
+                  text2: "The session has been removed from your schedule."
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", "Could not cancel session.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Failed to Cancel Session',
+                  text2: "Could not cancel the session."
+                });
+              }, 500);
             }
           }
         }

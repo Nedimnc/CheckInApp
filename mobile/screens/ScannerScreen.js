@@ -8,6 +8,7 @@ import NetInfo from '@react-native-community/netinfo'; // Offline detection
 import * as SecureStore from 'expo-secure-store';       
 import 'react-native-get-random-values';                
 import { v4 as uuidv4 } from 'uuid';                   // Generates offline_uuid
+import Toast from 'react-native-toast-message';
 
 export default function ScannerScreen({ navigation }) {
   const { user } = useContext(AuthContext); // Get the logged-in student
@@ -50,6 +51,23 @@ export default function ScannerScreen({ navigation }) {
       if (!isOnline) {
         // ADDED: Offline flow — decode session_id from token and save to local queue
         const payload = JSON.parse(atob(token.split('.')[1]));
+        const session_id = payload.session_id;
+
+        // Load existing queue, push new item, save back
+        const existing = await SecureStore.getItemAsync('checkins');
+        const queue = existing ? JSON.parse(existing) : [];
+
+        // Check for duplicate session_id entries
+        const isDuplicate = queue.some(item => item.session_id === session_id);
+        if (isDuplicate) {
+          Alert.alert(
+            "Duplicate Scan",
+            "This session has already been scanned and is waiting to sync.",
+            [{ text: "OK", onPress: () => navigation.goBack() }]
+          );
+          return;
+        }
+
         const newCheckin = {
           user_id: user.user_id,
           session_id: payload.session_id,
@@ -57,9 +75,7 @@ export default function ScannerScreen({ navigation }) {
           check_in_time: new Date().toISOString(),
         };
 
-        // Load existing queue, push new item, save back
-        const existing = await SecureStore.getItemAsync('checkins');
-        const queue = existing ? JSON.parse(existing) : [];
+        
         queue.push(newCheckin);
         await SecureStore.setItemAsync('checkins', JSON.stringify(queue));
 

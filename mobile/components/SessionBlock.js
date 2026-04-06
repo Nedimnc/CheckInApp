@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import theme from '../styles/theme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Reusable session block used by TutorDashboard and Schedule screens.
 // Props:
@@ -19,21 +20,26 @@ export default function SessionBlock({ session, currentUser, users = [], student
   const counterpartId = isImTheTutor ? session.student_id : session.tutor_id;
   const counterpartLabel = isImTheTutor ? 'Student' : 'Tutor';
   const counterpartName = student?.name || users.find(u => u.user_id === counterpartId)?.name || 'Unknown';
+  const counterpartPantherId = student?.panther_id || users.find(u => u.user_id === counterpartId)?.panther_id || 'N/A';
   const isPast = new Date(session.end_time) < new Date();
   const isCheckedIn = session.status === 'checked_in';
   const isBooked = session.status === 'booked';
+  const isBookedByOther = (session.status === 'booked' || session.status === 'checked_in') && !isBookedByMe;
   const slideAnim = useRef(new Animated.Value(isBookedByMe ? 1 : 0)).current;
+  const [isOverflowing, setIsOverflowing] = React.useState(false);
+  const [contentWidth, setContentWidth] = React.useState(0);
+  const [containerWidth, setContainerWidth] = React.useState(0);
+  const [scrollX, setScrollX] = React.useState(0);
 
-  let accentColor = '#2D52A2';
-  if (isPast) accentColor = '#CCC';
-  else if (isCheckedIn) accentColor = '#5B21B6';
-  else if (isBooked) accentColor = '#2E7D32';
+  useEffect(() => {
+    setIsOverflowing(contentWidth > containerWidth);
+  }, [contentWidth, containerWidth]);
 
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: isBookedByMe ? 1 : 0,
       duration: 300,
-      easing: Easing.inOut(Easing.ease),
+      easing: Easing.inOut(Easing.cubic),
       useNativeDriver: true,
     }).start();
   }, [isBookedByMe]);
@@ -48,15 +54,33 @@ export default function SessionBlock({ session, currentUser, users = [], student
     outputRange: [500, 0],
   });
 
+  const getSessionStatus = () => {
+    if (isPast) return 'PAST';
+    if ((isImTheTutor && isCheckedIn) || (isCheckedIn && isBookedByMe)) return 'CHECKED_IN';
+    if (!isImTheTutor && isBookedByOther) return 'UNAVAILABLE';
+    if ((isImTheTutor && isBooked) || isBookedByMe) return 'BOOKED';
+    return 'OPEN';
+  };
+
+  const status = getSessionStatus();
+
+  const statusConfig = {
+    PAST: { label: 'PAST', badgeStyle: styles.pastBadge, textStyle: styles.pastText, accentColor: '#CCC' },
+    CHECKED_IN: { label: 'CHECKED IN ✓', badgeStyle: styles.checkedInBadge, textStyle: styles.checkedInText, accentColor: '#5B21B6' },
+    BOOKED: { label: 'BOOKED', badgeStyle: styles.bookedBadge, textStyle: styles.bookedText, accentColor: '#2E7D32' },
+    UNAVAILABLE: { label: 'UNAVAILABLE', badgeStyle: styles.unavailableBadge, textStyle: styles.unavailableText, accentColor: '#CCC' },
+    OPEN: { label: 'OPEN', badgeStyle: styles.openBadge, textStyle: styles.openText, accentColor: '#2D52A2' },
+  };
+
+  const { label, badgeStyle, textStyle, accentColor } = statusConfig[status];
+
   return (
-    <View style={[styles.sessionCard, isCheckedIn && styles.checkedInSessionCard, isBooked && styles.bookedSessionCard, !isBooked && !isCheckedIn && styles.openSessionCard, { borderLeftColor: accentColor }]}>
+    <View style={[styles.sessionCard, { borderLeftColor: accentColor }, (isPast || status === 'UNAVAILABLE') && { opacity: 0.6 }]}>
 
       <View style={styles.cardHeader}>
         <Text style={styles.subjectText}>{session.subject}: {session.title}</Text>
-        <View style={[styles.statusBadge, isPast ? styles.pastBadge : (isCheckedIn ? styles.checkedInBadge : (isBooked ? styles.bookedBadge : styles.openBadge))]}>
-          <Text style={[styles.statusText, isPast ? styles.pastText : (isCheckedIn ? styles.checkedInText : (isBooked ? styles.bookedText : styles.openText))]}>
-            {isPast ? 'PAST' : (isCheckedIn ? 'CHECKED IN ✓' : (isBooked ? 'BOOKED' : 'OPEN'))}
-          </Text>
+        <View style={[styles.statusBadge, badgeStyle]}>
+          <Text style={[styles.statusText, textStyle]}>{label}</Text>
         </View>
       </View>
 
@@ -95,40 +119,65 @@ export default function SessionBlock({ session, currentUser, users = [], student
           </View>
           <View style={styles.studentRow}>
             <Ionicons name="card-outline" size={16} color="#555" />
-            <Text style={styles.studentInfo}>{student.panther_id || 'N/A'}</Text>
+            <Text style={styles.studentInfo}>{counterpartPantherId}</Text>
           </View>
         </View>
       )}
 
       {/* ACTIONS: horizontal scroll so buttons don't overflow */}
-      {!isPast && (
+      {!isPast && status !== 'UNAVAILABLE' && !isCheckedIn &&(
         <View style={styles.actionRowContainer}>
           {isImTheTutor ? (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tutorActionRowScroll}
-            >
-              <TouchableOpacity style={[styles.actionButton, styles.qrButton]} onPress={onPressQR}>
-                <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-                <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
-              </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.tutorActionRowScroll}
+                onLayout={(e) => setContainerWidth(e.nativeEvent.layout.width)}
+                onContentSizeChange={(width) => setContentWidth(width)}
+                onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
+                onScrollEventThrottle={16}
+              >
+                <TouchableOpacity style={[styles.actionButton, styles.qrButton]} onPress={onPressQR}>
+                  <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
+                  <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.actionButton, styles.copyButton]} onPress={onPressCopy}>
-                <Ionicons name="copy-outline" size={18} color='#679968' />
-                <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
-              </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionButton, styles.copyButton]} onPress={onPressCopy}>
+                  <Ionicons name="copy-outline" size={18} color='#679968' />
+                  <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={onPressEdit}>
-                <Ionicons name="create-outline" size={18} color="#F57C00" />
-                <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
-              </TouchableOpacity>
+                <TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={onPressEdit}>
+                  <Ionicons name="create-outline" size={18} color="#F57C00" />
+                  <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={onPressCancel}>
-                <Ionicons name="trash-outline" size={18} color="#D32F2F" />
-                <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
-              </TouchableOpacity>
-            </ScrollView>
+                <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={onPressCancel}>
+                  <Ionicons name="trash-outline" size={18} color="#D32F2F" />
+                  <Text style={[styles.actionText, { color: '#D32F2F' }]}>Delete</Text>
+                </TouchableOpacity>
+              </ScrollView>
+              {/* Fading edges when overflowing */}
+              {isOverflowing && scrollX > 10 && (
+                <LinearGradient
+                  colors={['rgba(255,255,255,1)', 'rgba(255,255,255,0)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  pointerEvents="none"
+                  style={[styles.fadeEdge, styles.fadeLeft]}
+                />
+              )}
+              {isOverflowing && scrollX < contentWidth - containerWidth - 10 && (
+                <LinearGradient
+                  colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  pointerEvents="none"
+                  style={[styles.fadeEdge, styles.fadeRight]}
+                />
+              )}
+            </View>
           ) : (
             /* If a student and a book action is provided, show Book button for open sessions */
             <View style={styles.studentActionRow}>
@@ -148,7 +197,7 @@ export default function SessionBlock({ session, currentUser, users = [], student
                       <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
                       <Text style={[styles.actionText, { color: '#2D52A2' }]}>Scan QR</Text>
                     </TouchableOpacity>
-
+                    
                     <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={onUnbook}>
                       <Ionicons name="close-circle-outline" size={18} color="#D32F2F" />
                       <Text style={[styles.actionText, { color: '#D32F2F' }]}>Unbook</Text>
@@ -186,12 +235,14 @@ const styles = StyleSheet.create({
   bookedBadge: { backgroundColor: '#E8F5E9' },
   checkedInBadge: { backgroundColor: '#EDE9FE' },
   pastBadge: { backgroundColor: '#F5F5F5' },
+  unavailableBadge: { backgroundColor: '#F5F5F5' },
 
   statusText: { fontSize: theme.typography.caption, fontWeight: 'bold' },
   openText: { color: theme.colors.primary },
   bookedText: { color: theme.colors.success },
   checkedInText: { color: '#5B21B6' },
   pastText: { color: '#999' },
+  unavailableText: { color: '#999' },
 
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing.xs },
   infoText: { marginLeft: theme.spacing.xs, color: theme.colors.textSecondary, fontSize: theme.typography.body },
@@ -211,11 +262,8 @@ const styles = StyleSheet.create({
     minWidth: '100%', justifyContent: 'space-between', flexDirection: 'row', alignItems: 'center', gap: 10,
   },
   studentActionRow: {
-    position: 'relative',
-    flexDirection: 'row',
-    width: '100%',
-    height: 40,
-    overflow: 'hidden',
+    position: 'relative', flexDirection: 'row', width: '100%',
+    height: 40, overflow: 'hidden'
   },
   actionButton: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: theme.spacing.xs,
@@ -227,22 +275,15 @@ const styles = StyleSheet.create({
   cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
   actionText: { fontWeight: '600', fontSize: theme.typography.button, marginLeft: theme.spacing.xs },
   bookActionButton: {
-    backgroundColor: theme.colors.primary,
-    paddingVertical: theme.spacing.sm,
-    width: '100%', // Take full width of the container
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: theme.colors.primary, paddingVertical: theme.spacing.sm,
+    width: '100%', borderRadius: 30, alignItems: 'center', justifyContent: 'center'
   },
   bookActionText: { color: '#FFF', fontWeight: '700', fontSize: theme.typography.button },
   animatedContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
+    position: 'absolute', left: 0, right: 0, top: 0, bottom: 0,
+    justifyContent: 'center', alignItems: 'center', width: '100%'
   },
+  fadeEdge: { position: 'absolute', top: 0, bottom: 0, width: 40, zIndex: 1 },
+  fadeLeft: { left: 0 },
+  fadeRight: { right: 0 },
 });

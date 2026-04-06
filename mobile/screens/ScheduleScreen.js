@@ -8,6 +8,7 @@ import { Calendar } from 'react-native-calendars';
 import socket from '../services/socket';
 import SessionBlock from '../components/SessionBlock';
 import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function Schedule({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -137,7 +138,7 @@ export default function Schedule({ navigation }) {
   const handleTutorCancel = (sessionId) => {
     Alert.alert(
       "Cancel Session",
-      "Are you sure? This will delete the session entirely.",
+      "Are you sure you want to cancel this session? This cannot be undone.",
       [
         { text: "No", style: "cancel" },
         {
@@ -145,9 +146,25 @@ export default function Schedule({ navigation }) {
           onPress: async () => {
             try {
               await cancelSession(sessionId, user.user_id);
-              Alert.alert("Success", "Session deleted.");
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setMySessions(prev => prev.filter(s => s.session_id !== sessionId));
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Cancelled',
+                  text2: "The session has been removed from your schedule."
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", "Could not delete session.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Failed to Cancel Session',
+                  text2: "Could not cancel the session."
+                });
+              }, 500);
             }
           }
         }
@@ -158,7 +175,7 @@ export default function Schedule({ navigation }) {
   const handleStudentUnbook = (sessionId) => {
     Alert.alert(
       "Unbook Session",
-      "Do you want to cancel your booking? The slot will become open for others.",
+      "Do you want to cancel your booking?",
       [
         { text: "No", style: "cancel" },
         {
@@ -166,9 +183,25 @@ export default function Schedule({ navigation }) {
           onPress: async () => {
             try {
               await unbookSession(sessionId, user.user_id);
-              Alert.alert("Success", "You have been removed from this session.");
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+              setMySessions(prev => prev.map(s => s.session_id === sessionId ? { ...s, status: 'open', student_id: null } : s));
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Unbooked',
+                  text2: `You have successfully unbooked.`
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", error.message || "Could not unbook.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Unbooking Failed',
+                  text2: `Could not unbook the session. Please try again.`
+                });
+              }, 500);
             }
           }
         }

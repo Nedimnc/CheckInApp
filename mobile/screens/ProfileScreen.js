@@ -6,6 +6,7 @@ import { BarChart } from "react-native-gifted-charts";
 import { useIsFocused } from '@react-navigation/native';
 import { AuthContext } from '../context/AuthContext';
 import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function Profile({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -13,6 +14,29 @@ export default function Profile({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
   const { logout } = useContext(AuthContext);
+
+  const handleLogout = async (role) => {
+    try {
+      logout();
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'success',
+          text1: 'Logout Successful!',
+          text2: `You have been logged out.`
+        });
+      }, 500);
+    } catch (error) {
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Logout Failed',
+          text2: error.message || "An error occurred while trying to log out."
+        });
+      }, 500);
+    }
+  };
 
   const processStats = (data) => {
     if (user.role === 'student') {
@@ -74,12 +98,12 @@ export default function Profile({ navigation }) {
                 <BarChart
                   data={stats?.chartData || []}
                   height={80}
-                  width={100}
+                  width={110}
                   barWidth={10}
-                  initialSpacing={10}
+                  initialSpacing={15}
                   spacing={15}
                   noOfSections={3}
-                  barBorderRadius={4}
+                  barBorderRadius={3}
                   yAxisThickness={0}
                   xAxisThickness={0}
                   disablePress
@@ -123,7 +147,7 @@ export default function Profile({ navigation }) {
       <View style={styles.bottomContent}>
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={logout}
+          onPress={handleLogout}
         >
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
