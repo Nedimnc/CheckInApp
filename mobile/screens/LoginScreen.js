@@ -4,23 +4,36 @@ import { loginUser } from '../api'; // Import the helper we just made
 import { Ionicons } from '@expo/vector-icons';
 import { useHeaderHeight } from '@react-navigation/elements';
 import { AuthContext } from '../context/AuthContext';
+import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function LoginScreen({ navigation }) {
   const headerHeight = useHeaderHeight();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const { setUser } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
 
   const handleLogin = async (role) => {
     try {
-      const user = await loginUser(email, password);
-      setUser(user);
-      Alert.alert('Success', `Welcome back, ${user.name}!`);
-      // Later we will navigate to Dashboard here
-      navigation.replace('MainTabs', { role: user.role });
+      const loggedInUser = await login(email, password);
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'greeting',
+          text1: 'Login Successful!',
+          text2: `Welcome back, ${loggedInUser.name}!`
+        });
+      }, 500);
     } catch (error) {
-      Alert.alert('Error', error.message || 'Login failed');
+      Toast.hide();
+      setTimeout(() => {
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: error.message || "Check your credentials and try again."
+        });
+      }, 500);
     }
   };
 
@@ -64,7 +77,7 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
         </View>
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: '#2D52A2' }]}
+          style={[styles.submitButton, { backgroundColor: theme.colors.primary }]}
           onPress={handleLogin}
         >
           <Text style={styles.submitText}>Log In</Text>
@@ -81,7 +94,7 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.submitText}>Quick Student (dev button)</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: '#2f7031' }]}
+          style={[styles.submitButton, { backgroundColor: theme.colors.success }]}
           onPress={() => {
             setEmail('tutor@gsu.edu');
             setPassword('tutor');
@@ -101,87 +114,23 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: theme.spacing.md, },
   card: {
-    backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
-    width: '100%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 5,
+    backgroundColor: theme.colors.card, borderRadius: theme.radii.lg, padding: theme.spacing.md, width: '100%', shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.1, shadowRadius: 20, elevation: 5,
   },
-  header: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
-  },
-  icon: {
-    fontSize: 24,
-    marginBottom: 4,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 6,
-    marginLeft: 4,
-  },
+  header: { fontSize: theme.typography.h2, fontWeight: 'bold', textAlign: 'center', marginBottom: theme.spacing.lg, color: theme.colors.text, },
+  icon: { fontSize: 24, marginBottom: 4, },
+  label: { fontSize: theme.typography.caption, fontWeight: '600', color: theme.colors.textSecondary, marginBottom: 6, marginLeft: 4, },
   input: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
-    fontSize: 16,
+    flex: 1, backgroundColor: theme.colors.surface, borderWidth: 1, borderColor: theme.colors.border,
+    borderRadius: theme.radii.md, padding: theme.spacing.sm, marginBottom: theme.spacing.sm, fontSize: theme.typography.body,
   },
-  submitButton: {
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  submitText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-    width: '100%',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 15,
-    height: '70%',
-    justifyContent: 'top',
-  },
-  footerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  footer: {
-    textAlign: 'left',
-    color: '#666',
-  },
-  signUpText: {
-    textAlign: 'right',
-    color: '#2D52A2',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline',
-  }
+  submitButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.lg, alignItems: 'center', marginTop: theme.spacing.sm, },
+  submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold', },
+  inputContainer: { flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', },
+  eyeIcon: { position: 'absolute', right: 15, height: '70%', justifyContent: 'center', },
+  footerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.md, },
+  footer: { textAlign: 'left', color: theme.colors.textSecondary, },
+  signUpText: { textAlign: 'right', color: theme.colors.primary, fontWeight: 'bold', textDecorationLine: 'underline', }
 });

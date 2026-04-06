@@ -1,10 +1,14 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import React, { useState, useContext, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, TextInput, LayoutAnimation, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../context/AuthContext';
 // Added getUsers to imports
 import { getSessions, cancelSession, getUsers } from '../api';
 import { useIsFocused } from '@react-navigation/native';
+import socket from '../services/socket';
+import SessionBlock from '../components/SessionBlock';
+import theme from '../styles/theme';
+import Toast from 'react-native-toast-message';
 
 export default function TutorDashboardScreen({ navigation }) {
   const { user } = useContext(AuthContext);
@@ -13,12 +17,51 @@ export default function TutorDashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const isFocused = useIsFocused();
   const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState('');
 
   useEffect(() => {
     if (isFocused) {
       loadData();
     }
   }, [isFocused]);
+
+  useEffect(() => {
+    const handleBooked = (updatedSession) => {
+      requestAnimationFrame(() => {
+        if (updatedSession.tutor_id === user.user_id) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+        }
+      });
+    };
+    const handleUnbooked = (updatedSession) => {
+      requestAnimationFrame(() => {
+        if (updatedSession.tutor_id === user.user_id) {
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+        }
+      });
+    };
+    const handleCheckIn = (data) => {
+      const { session } = data;
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev =>
+          prev.map(s => s.session_id === session.session_id ? session : s)
+        );
+      });
+    };
+
+    socket.on('session_booked', handleBooked);
+    socket.on('session_unbooked', handleUnbooked);
+    socket.on('student_checked_in', handleCheckIn);
+
+    return () => {
+      socket.off('session_booked', handleBooked);
+      socket.off('session_unbooked', handleUnbooked);
+      socket.off('student_checked_in', handleCheckIn);
+    };
+  }, [user.user_id]);
 
   const loadData = async () => {
     try {
@@ -53,10 +96,25 @@ export default function TutorDashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               await cancelSession(sessionId, user.user_id);
+              LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
               setSessions(prev => prev.filter(s => s.session_id !== sessionId));
-              Alert.alert("Success", "Session cancelled.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Cancelled',
+                  text2: "The session has been removed from your schedule."
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", "Could not cancel session.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Failed to Cancel Session',
+                  text2: "Could not cancel the session."
+                });
+              }, 500);
             }
           }
         }
@@ -64,173 +122,86 @@ export default function TutorDashboardScreen({ navigation }) {
     );
   };
 
+  const filteredSessions = useMemo(() => {
+    const now = new Date();
+    return sessions
+      .filter((session) => {
+        if (session.tutor_id !== user?.user_id) return false;
+        const startTime = new Date(session.start_time);
+        const endTime = new Date(session.end_time);
+        const isVisible = session.status === 'open' ? startTime > now : endTime > now;
+        if (!isVisible) return false;
+        const matchesSearch =
+          session.subject.toLowerCase().includes(filter.toLowerCase()) ||
+          users.find(u => u.user_id === session.student_id)?.name.toLowerCase().includes(filter.toLowerCase()) ||
+          session.title.toLowerCase().includes(filter.toLowerCase());
+        return matchesSearch;
+      })
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+  }, [sessions, users, filter, user]);
+
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView
+      <FlatList
+        data={filteredSessions}
+        keyExtractor={(item) => item.session_id.toString()}
+        renderItem={({ item }) => (
+          <SessionBlock
+            session={item}
+            currentUser={user}
+            users={users}
+            student={users.find(u => u.user_id === item.student_id)}
+            onPressQR={() => navigation.navigate('SessionQR', { session: item })}
+            onPressCopy={() => {
+              const { session_id, student_id, ...sessionCopy } = item;
+              navigation.navigate('SessionCreate', { sessionToEdit: { ...sessionCopy, status: 'open' } });
+            }}
+            onPressEdit={() => navigation.navigate('SessionCreate', { sessionToEdit: item })}
+            onPressCancel={() => handleCancelSession(item.session_id)}
+          />
+        )}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.headerText}>Your Sessions</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Search by course, title, or student..."
+              onChangeText={setFilter}
+              value={filter}
+            />
+          </>
+        }
+        ListEmptyComponent={<Text style={styles.emptyText}>No sessions posted yet.</Text>}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
-      >
-        <Text style={styles.headerText}>Your Sessions</Text>
+      />
 
-        {sessions
-          .filter((session) => session.tutor_id === user?.user_id)
-          .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-          .map((session) => {
-            // Find the student if one is assigned
-            const student = session.student_id ? users.find(u => u.user_id === session.student_id) : null;
-            const isBooked = session.status === 'booked';
-
-            return (
-              <View key={session.session_id} style={styles.sessionCard}>
-
-                {/* Session Info */}
-                <View style={styles.cardHeader}>
-                  <Text style={styles.subjectText}>{session.subject}</Text>
-                  <View style={[styles.statusBadge, isBooked ? styles.bookedBadge : styles.openBadge]}>
-                    <Text style={[styles.statusText, isBooked ? styles.bookedText : styles.openText]}>
-                      {session.status || 'Open'}
-                    </Text>
-                  </View>
-                </View>
-
-                <Text style={styles.titleText}>{session.title}</Text>
-
-                <View style={styles.infoRow}>
-                  <Ionicons name="calendar-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>
-                    {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Ionicons name="time-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>
-                    {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                </View>
-
-                <View style={styles.infoRow}>
-                  <Ionicons name="location-outline" size={16} color="#666" />
-                  <Text style={styles.infoText}>{session.location}</Text>
-                </View>
-
-                {/* NEW: Student Info Section (Only visible if Booked) */}
-                {isBooked && student && (
-                  <View style={styles.studentInfoBox}>
-                    <Text style={styles.studentLabel}>Booked Student:</Text>
-                    <View style={styles.studentRow}>
-                      <Ionicons name="person" size={16} color="#2E7D32" />
-                      <Text style={styles.studentName}>{student.name}</Text>
-                    </View>
-                    <View style={styles.studentRow}>
-                      <Ionicons name="card-outline" size={16} color="#555" />
-                      <Text style={styles.studentId}>ID: {student.panther_id || 'N/A'}</Text>
-                    </View>
-                  </View>
-                )}
-
-                {/* ACTION BUTTONS */}
-                <View style={styles.actionRow}>
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.qrButton]}
-                    onPress={() => Alert.alert("Coming Soon", "QR Code generation...")}
-                  >
-                    <Ionicons name="qr-code-outline" size={18} color="#2D52A2" />
-                    <Text style={[styles.actionText, { color: '#2D52A2' }]}>QR</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.copyButton]}
-                    onPress={() => {
-                      const { session_id, student_id, ...sessionCopy } = session;
-                      navigation.navigate('SessionCreate', { sessionToEdit: { ...sessionCopy, status: 'open' }
-                      });
-                    }}
-                  >
-                    <Ionicons name="copy-outline" size={18} color='#679968' />
-                    <Text style={[styles.actionText, { color: '#679968' }]}>Copy</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.editButton]}
-                    onPress={() => navigation.navigate('SessionCreate', { sessionToEdit: session })}
-                  >
-                    <Ionicons name="create-outline" size={18} color="#F57C00" />
-                    <Text style={[styles.actionText, { color: '#F57C00' }]}>Edit</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.actionButton, styles.cancelButton]}
-                    onPress={() => handleCancelSession(session.session_id)}
-                  >
-                    <Ionicons name="trash-outline" size={18} color="#D32F2F" />
-                    <Text style={[styles.actionText, { color: '#D32F2F' }]}>Cancel</Text>
-                  </TouchableOpacity>
-                </View>
-
-              </View>
-            );
-          })}
-
-        {sessions.filter(s => s.tutor_id === user?.user_id).length === 0 && (
-          <Text style={styles.emptyText}>No sessions posted yet.</Text>
-        )}
-
-      </ScrollView>
-
-      {/* Floating Add Button */}
       <TouchableOpacity
         style={[styles.floatingButtonStyle, { backgroundColor: '#2D52A2' }]}
         onPress={() => navigation.navigate('SessionCreate')}
       >
-        <Ionicons name="add" size={30} color="white" />
+        <Ionicons name="calendar-outline" size={30} color="white" />
       </TouchableOpacity>
     </View>
   );
+
 }
 
+
 const styles = StyleSheet.create({
-  scrollContent: { flexGrow: 1, padding: 20, paddingBottom: 100 },
-  headerText: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, color: '#333' },
-  sessionCard: { backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  subjectText: { fontSize: 18, fontWeight: 'bold', color: '#2D52A2' },
-
-  statusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  openBadge: { backgroundColor: '#E3F2FD' },
-  bookedBadge: { backgroundColor: '#E8F5E9' },
-
-  statusText: { fontSize: 12, fontWeight: '600' },
-  openText: { color: '#1976D2' },
-  bookedText: { color: '#2E7D32' },
-
-  titleText: { fontSize: 16, color: '#333', marginBottom: 12 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
-  infoText: { marginLeft: 8, color: '#555', fontSize: 14 },
-
-
-  studentInfoBox: {
-    marginTop: 15,
-    padding: 12,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+  scrollContent: { flexGrow: 1, padding: theme.spacing.md, paddingBottom: 100 },
+  headerText: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
+  input: {
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md,
+    padding: theme.spacing.md, marginBottom: theme.spacing.md, fontSize: theme.typography.body,
   },
-  studentLabel: { fontSize: 12, color: '#888', marginBottom: 4, fontWeight: '600' },
-  studentRow: { flexDirection: 'row', alignItems: 'center', marginTop: 2 },
-  studentName: { marginLeft: 8, fontWeight: 'bold', color: '#333' },
-  studentId: { marginLeft: 8, color: '#666', fontSize: 12 },
-
-  actionRow: { flexDirection: 'row', marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: '#EEE', justifyContent: 'space-between', gap: 10 },
-  actionButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 12, borderRadius: 8, borderWidth: 1 },
-  qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },
-  copyButton: { borderColor: '#87c788', backgroundColor: '#f5fff5' },
-  editButton: { borderColor: '#FFE0B2', backgroundColor: '#FFF3E0' },
-  cancelButton: { borderColor: '#FFCDD2', backgroundColor: '#FFEBEE' },
-  actionText: { fontWeight: '600', fontSize: 13, marginLeft: 6 },
-  emptyText: { textAlign: 'center', color: '#999', marginTop: 30, fontSize: 16 },
-  floatingButtonStyle: { position: 'absolute', width: 60, height: 60, alignItems: 'center', justifyContent: 'center', right: 30, bottom: 30, backgroundColor: '#2D52A2', borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 }
+  emptyText: { textAlign: 'center', color: theme.colors.muted, marginTop: theme.spacing.lg, fontSize: theme.typography.body },
+  floatingButtonStyle: {
+    position: 'absolute', width: 60, height: 60, alignItems: 'center',
+    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: theme.colors.primary,
+    borderRadius: 30, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 4
+  },
 });

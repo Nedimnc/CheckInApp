@@ -1,6 +1,7 @@
 // mobile/api.js
 import axios from 'axios';
 import config from './config'; // Import the local config
+import * as SecureStore from 'expo-secure-store';
 
 const BASE_URL = config.API_URL; // Use the URL from the config file
 
@@ -11,9 +12,29 @@ const api = axios.create({
   },
 });
 
+export default api;
+
+// Request interceptor to include the token in all requests
+api.interceptors.request.use(
+  async (axiosConfig) => {
+    const token = await SecureStore.getItemAsync('userToken');
+    if (token) {
+      axiosConfig.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      console.log('No token found in SecureStore');
+    }
+    return axiosConfig;
+  }, (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export const loginUser = async (email, password) => {
   try {
     const response = await api.post('/auth/login', { email, password });
+    if (response.data.token) {
+      await SecureStore.setItemAsync('userToken', response.data.token);
+    }
     return response.data;
   } catch (error) {
     throw error.response ? error.response.data : { message: 'Network Error' };
@@ -99,4 +120,52 @@ export const unbookSession = async (sessionId, studentId) => {
   }
 };
 
-export default api;
+// Fetch the secure JWT for the Tutor's screen 
+export const getQRToken = async (sessionId) => {
+  try {
+    const response = await api.get(`/sessions/${sessionId}/qrcode`);
+    return response.data.token;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// Student sends the scanned JWT to the backend to check in
+export const checkinSession = async (token, studentId) => {
+  try {
+    const response = await api.post(`/sessions/checkin`, { 
+      token: token,
+      student_id: studentId 
+    });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getStudentStats = async (userID) => {
+  try {
+    const response = await api.get(`/stats/student/${userID}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const getTutorStats = async (userID) => {
+  try {
+    const response = await api.get(`/stats/tutor/${userID}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+export const syncAttendance = async (checkins) => {
+  try {
+    const response = await api.post('/attendance/sync', { checkins });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};

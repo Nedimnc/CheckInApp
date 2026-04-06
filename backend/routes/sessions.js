@@ -2,7 +2,12 @@
 import { Router } from 'express';
 import sessionsController from '../controllers/sessionsController.js';
 
+// Import authentication middleware
+import authenticateToken from '../middleware/authMiddleware.js';
+
 const router = Router();
+
+router.use(authenticateToken); // Apply authentication middleware to all session routes below this line
 
 // api/sessions/create -> Create Session Route
 router.post('/create', sessionsController.createSession);
@@ -21,5 +26,11 @@ router.put('/:session_id', sessionsController.updateSession);
 
 // api/sessions/:session_id/unbook -> Unbook Session Route
 router.post('/:session_id/unbook', sessionsController.unbookSession);
+
+// api/sessions/:session_id/qrcode -> Generate secure token for Tutor's QR screen
+router.get('/:session_id/qrcode', sessionsController.generateQRToken);
+
+// api/sessions/checkin -> Student Check-In Route (Securely reads the token)
+router.post('/checkin', sessionsController.checkinSession);
 
 export default router;

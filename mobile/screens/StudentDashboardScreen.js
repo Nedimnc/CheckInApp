@@ -1,9 +1,15 @@
-import React, { useState, useContext, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TextInput, ActivityIndicator, RefreshControl, TouchableOpacity, Alert, LayoutAnimation, Animated, Easing } from 'react-native';
 import { AuthContext } from '../context/AuthContext';
 import { getSessions, getUsers, bookSession, unbookSession } from '../api';
 import { useIsFocused } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import socket from '../services/socket';
+import SessionBlock from '../components/SessionBlock';
+import theme from '../styles/theme';
+import NetInfo from '@react-native-community/netinfo'; // Offline detection
+import * as SecureStore from 'expo-secure-store';       // Read pending queue count
+import Toast from 'react-native-toast-message';
 
 export default function StudentDashboardScreen({ navigation }) {
   const [filter, setFilter] = useState('');
@@ -13,18 +19,99 @@ export default function StudentDashboardScreen({ navigation }) {
   const isFocused = useIsFocused();
   const [users, setUsers] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);    // ADDED
+  const [pendingCount, setPendingCount] = useState(0);  // ADDED
+
+  // Subscribe to network state for the offline banner
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOffline(!(state.isConnected && state.isInternetReachable));
+    });
+    return () => unsubscribe();
+  }, []);
+
+    // Refresh pending badge whenever screen comes into focus
+  useEffect(() => {
+    if (isFocused) {
+      SecureStore.getItemAsync('checkins').then((data) => {
+        const queue = data ? JSON.parse(data) : [];
+        setPendingCount(queue.length);
+      });
+    }
+  }, [isFocused]);
+
+  // Poll every 3 seconds to clear badge/banner once sync completes in background 
+  useEffect(() => {
+    if (pendingCount === 0) return;
+    const interval = setInterval(async () => {
+      const data = await SecureStore.getItemAsync('checkins');
+      const queue = data ? JSON.parse(data) : [];
+      if (queue.length === 0) setPendingCount(0);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [pendingCount]);
 
   useEffect(() => {
     if (isFocused) {
       loadData();
-      loadUsers();
     }
   }, [isFocused]);
 
+  useEffect(() => {
+    const handleCreated = (newSession) => {
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev => [...prev, newSession]);
+      });
+    };
+    const handleBooked = (updatedSession) => {
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+      });
+    };
+    const handleUnbooked = (updatedSession) => {
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+      });
+    };
+    const handleCancelled = ({ session_id }) => {
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev => prev.filter(s => Number(s.session_id) !== Number(session_id)));
+      });
+    };
+    const handleUpdated = (updatedSession) => {
+      requestAnimationFrame(() => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSessions(prev => prev.map(s => s.session_id === updatedSession.session_id ? updatedSession : s));
+      });
+    };
+
+    socket.on('session_created', handleCreated);
+    socket.on('session_booked', handleBooked);
+    socket.on('session_unbooked', handleUnbooked);
+    socket.on('session_cancelled', handleCancelled);
+    socket.on('session_updated', handleUpdated);
+
+    return () => {
+      socket.off('session_created', handleCreated);
+      socket.off('session_booked', handleBooked);
+      socket.off('session_unbooked', handleUnbooked);
+      socket.off('session_cancelled', handleCancelled);
+      socket.off('session_updated', handleUpdated);
+    };
+  }, []);
+
   const loadData = async () => {
     try {
-      const data = await getSessions();
-      setSessions(data);
+      const [sessionsData, usersData] = await Promise.all([
+        getSessions(),
+        getUsers()
+      ]);
+      setSessions(sessionsData);
+      setUsers(usersData);
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -32,18 +119,9 @@ export default function StudentDashboardScreen({ navigation }) {
     }
   };
 
-  const loadUsers = async () => {
-    try {
-      const data = await getUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([loadData(), loadUsers()]).then(() => setRefreshing(false));
+    loadData().then(() => setRefreshing(false));
   }, []);
 
   // --- HANDLERS ---
@@ -59,10 +137,28 @@ export default function StudentDashboardScreen({ navigation }) {
           onPress: async () => {
             try {
               await bookSession(session.session_id, user.user_id);
-              Alert.alert("Success", "You have booked this session!");
-              loadData(); 
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Booked',
+                  text2: `You have successfully booked ${session.subject}.`
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", error.message || "Failed to book");
+              const serverMessage = error.message || 'Could not complete the request.';
+              if (serverMessage.includes("Invalid token")) {
+                console.log("Auth error caught via string matching - silencing local alert.");
+                return;
+              }
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Action Failed.',
+                  text2: `${serverMessage}`
+                });
+              }, 500);
             }
           }
         }
@@ -76,15 +172,27 @@ export default function StudentDashboardScreen({ navigation }) {
       "Do you want to cancel your booking?",
       [
         { text: "No", style: "cancel" },
-        { 
+        {
           text: "Yes, Unbook", style: 'destructive',
           onPress: async () => {
             try {
               await unbookSession(session.session_id, user.user_id);
-              loadData(); 
-              Alert.alert("Success", "You have been removed from this session.");
+              Toast.hide();
+              setTimeout(() => {
+                Toast.show({
+                  type: 'success',
+                  text1: 'Session Unbooked',
+                  text2: `You have successfully unbooked ${session.subject}.`
+                });
+              }, 500);
             } catch (error) {
-              Alert.alert("Error", error.message || "Could not unbook.");
+              if (error.response && error.response.status !== 403 && error.response.status !== 401) {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Unbooking Failed',
+                  text2: `Could not unbook ${session.subject}. Please try again.`
+                });
+              }
             }
           }
         }
@@ -92,169 +200,113 @@ export default function StudentDashboardScreen({ navigation }) {
     );
   };
 
+  const filteredSessions = useMemo(() => {
+    const now = new Date();
+    return sessions
+      .filter((session) => {
+        const startTime = new Date(session.start_time);
+        const endTime = new Date(session.end_time);
+        const isVisible = session.status === 'open' ? startTime > now : endTime > now;
+        if (!isVisible) return false;
+        const matchesSearch =
+          session.subject.toLowerCase().includes(filter.toLowerCase()) ||
+          (users.find(u => u.user_id === session.tutor_id)?.name || '').toLowerCase().includes(filter.toLowerCase()) ||
+          session.title.toLowerCase().includes(filter.toLowerCase());
+        return matchesSearch;
+      })
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+  }, [sessions, filter, users]);
+
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.scrollContent}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-    >
-      <TextInput
-        style={styles.input}
-        placeholder="Search by course or tutor..."
-        onChangeText={setFilter}
-        value={filter}
+    <View style={{ flex: 1 }}>
+      {/* Offline banner */}
+      {isOffline && (
+        <View style={styles.offlineBanner}>
+          <Ionicons name="cloud-offline-outline" size={16} color="#fff" />
+          <Text style={styles.offlineBannerText}>
+            Offline Mode — Scans will be queued{pendingCount > 0 ? ` (${pendingCount} pending)` : ''}
+          </Text>
+        </View>
+      )}
+
+      {/* Back online with pending items */}
+      {!isOffline && pendingCount > 0 && (
+        <View style={styles.pendingBanner}>
+          <Ionicons name="sync-outline" size={16} color="#1976D2" />
+          <Text style={styles.pendingBannerText}>Syncing {pendingCount} queued check-in{pendingCount > 1 ? 's' : ''}...</Text>
+        </View>
+      )}
+
+      <FlatList
+        data={filteredSessions}
+        keyExtractor={(item) => item.session_id.toString()}
+        renderItem={({ item }) => (
+          <SessionBlock
+            session={item}
+            currentUser={user}
+            users={users}
+            onPressScan={() => navigation.navigate('Scanner')}
+            onUnbook={() => handleUnbook(item)}
+            onPressBook={() => handleBook(item)}
+          />
+        )}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.headerText}>All Sessions</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Search by course, title, or tutor..."
+              onChangeText={setFilter}
+              value={filter}
+            />
+          </>
+        }
+        ListEmptyComponent={<Text style={styles.emptyText}>No upcoming sessions available.</Text>}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.scrollContent}
       />
-      
-      {sessions
-        .filter((session) => {
-          const isFuture = new Date(session.start_time) > new Date();
-          const matchesSearch = session.subject.toLowerCase().includes(filter.toLowerCase()) || 
-            users.find(u => u.user_id === session.tutor_id)?.name.toLowerCase().includes(filter.toLowerCase());
-          return isFuture && matchesSearch;
-        })
-        .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
-        .map((session) => {
-          const isMyBooking = session.student_id === user.user_id;
-          const isBookedByOther = session.status === 'booked' && !isMyBooking;
-
-          return (
-            <View key={session.session_id} style={[styles.sessionCard, isMyBooking && styles.myBookingCard]}>
-              <View style={styles.headerRow}>
-                <Text style={styles.subjectTitle}>{session.subject}: {session.title}</Text>
-                
-                {isMyBooking ? (
-                  <View style={styles.badgeGreen}><Text style={styles.badgeTextGreen}>Booked by You</Text></View>
-                ) : isBookedByOther ? (
-                  <View style={styles.badgeGray}><Text style={styles.badgeTextGray}>Unavailable</Text></View>
-                ) : (
-                  <View style={styles.badgeBlue}><Text style={styles.badgeTextBlue}>Open</Text></View>
-                )}
-              </View>
-
-              <View style={styles.infoRow}>
-                <Ionicons name="calendar-outline" size={16} color="#666" />
-                <Text style={styles.infoText}>
-                  {new Date(session.start_time).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-                </Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={16} color="#666" />
-                <Text style={styles.infoText}>
-                  {new Date(session.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(session.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Ionicons name="location-outline" size={16} color="#666" />
-                <Text style={styles.infoText}>{session.location}</Text>
-              </View>
-
-              <View style={styles.infoRow}>
-                <Ionicons name="person-outline" size={16} color="#666" />
-                <Text style={styles.infoText}>
-                   Tutor: {users.find(u => u.user_id === session.tutor_id)?.name || 'Loading...'}
-                </Text>
-              </View>
-
-              {/* ACTION BUTTON AREA */}
-              
-              {/* 1. If I booked it: Show Compact Scan & Unbook buttons (Right Aligned) */}
-              {isMyBooking && (
-                <View style={styles.actionRow}>
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.qrButton]}
-                    onPress={() => Alert.alert("Scanner", "Camera scanner coming soon!")}
-                  >
-                    <Ionicons name="scan-outline" size={16} color="#2D52A2" />
-                    <Text style={[styles.actionText, { color: '#2D52A2' }]}>Scan QR</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={[styles.actionButton, styles.cancelButton]}
-                    onPress={() => handleUnbook(session)}
-                  >
-                    <Ionicons name="close-circle-outline" size={16} color="#D32F2F" />
-                    <Text style={[styles.actionText, { color: '#D32F2F' }]}>Unbook</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* 2. If Open (and not me): Show Big Book Button */}
-              {!isMyBooking && !isBookedByOther && (
-                <View style={{ marginTop: 15 }}>
-                  <TouchableOpacity 
-                    style={styles.bookButton}
-                    onPress={() => handleBook(session)}
-                  >
-                    <Text style={styles.bookButtonText}>Book Session</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-
-            </View>
-          );
-        })}
-        
-        {sessions.length === 0 && <Text style={styles.emptyText}>No upcoming sessions available.</Text>}
-    </ScrollView>
+      <TouchableOpacity style={styles.floatingButtonStyle} onPress={() => navigation.navigate('Scanner')}>
+        <Ionicons name="qr-code-outline" size={30} color="white" />
+        {/* Red dot badge when there are pending check-ins */}
+        {pendingCount > 0 && <View style={styles.badgeDot} />}
+      </TouchableOpacity>
+    </View>
   );
+
 }
 
 const styles = StyleSheet.create({
-  scrollContent: { padding: 20, paddingBottom: 50 },
+  // ADDED: offline/pending banners
+  offlineBanner: {
+    backgroundColor: '#B71C1C', flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', paddingVertical: 8, gap: 6,
+  },
+  offlineBannerText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  pendingBanner: {
+    backgroundColor: '#E3F2FD', flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', paddingVertical: 8, gap: 6,
+  },
+  pendingBannerText: { color: '#1976D2', fontSize: 13, fontWeight: '600' },
+  // ADDED: badge dot on floating button
+  badgeDot: {
+    position: 'absolute', top: 8, right: 8, width: 12, height: 12,
+    borderRadius: 6, backgroundColor: '#D32F2F', borderWidth: 2, borderColor: '#fff',
+  },
+
+  scrollContent: { padding: theme.spacing.md, paddingBottom: 50 },
+  headerText: { fontSize: theme.typography.h1, fontWeight: 'bold', color: theme.colors.text, marginBottom: theme.spacing.md },
   input: {
-    backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 12,
-    padding: 15, marginBottom: 20, fontSize: 16, elevation: 2,
+    backgroundColor: theme.colors.card, borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md,
+    padding: theme.spacing.md, marginBottom: theme.spacing.md, fontSize: theme.typography.body,
   },
-  sessionCard: {
-    backgroundColor: '#FFF', borderRadius: 16, padding: 20, marginBottom: 15,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1,
-    shadowRadius: 8, elevation: 4, borderLeftWidth: 5, borderLeftColor: '#2D52A2',
+  emptyText: { textAlign: 'center', marginTop: theme.spacing.lg, color: theme.colors.muted },
+  floatingButtonStyle: {
+    position: 'absolute', width: 60, height: 60, alignItems: 'center',
+    justifyContent: 'center', right: 30, bottom: 30, backgroundColor: theme.colors.primary,
+    borderRadius: 30, elevation: 5, shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4
   },
-  myBookingCard: {
-    borderLeftColor: '#4CAF50', backgroundColor: '#FFF'
-  },
-  headerRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12,
-  },
-  subjectTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', flex: 1, paddingRight: 5 },
-  
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  infoText: { marginLeft: 10, color: '#555', fontSize: 15 },
-
-  badgeBlue: { backgroundColor: '#E3F2FD', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextBlue: { color: '#1976D2', fontSize: 12, fontWeight: 'bold' },
-  
-  badgeGreen: { backgroundColor: '#E8F5E9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextGreen: { color: '#2E7D32', fontSize: 12, fontWeight: 'bold' },
-
-  badgeGray: { backgroundColor: '#EEEEEE', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
-  badgeTextGray: { color: '#9E9E9E', fontSize: 12, fontWeight: 'bold' },
-
- 
-  bookButton: {
-    backgroundColor: '#2D52A2', paddingVertical: 12, borderRadius: 10,
-    alignItems: 'center', width: '100%',
-  },
-  bookButtonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-
-
-  actionRow: { 
-    flexDirection: 'row', marginTop: 15, paddingTop: 15, 
-    borderTopWidth: 1, borderTopColor: '#EEE', 
-    justifyContent: 'flex-end', 
-    gap: 8 
-  },
-  actionButton: { 
-    flexDirection: 'row', alignItems: 'center', 
-    paddingVertical: 6, paddingHorizontal: 10, 
-    borderRadius: 8, borderWidth: 1 
-  },
-  qrButton: { borderColor: '#2D52A2', backgroundColor: '#F5F7FA' },
-  cancelButton: { borderColor: '#D32F2F', backgroundColor: '#FFEBEE' },
-  actionText: { fontWeight: '600', fontSize: 12, marginLeft: 4 }, 
-  
-  emptyText: { textAlign: 'center', marginTop: 20, color: '#888' }
+  animatedContainer: { position: 'absolute', width: '100%', paddingHorizontal: theme.spacing.xxs },
 });
