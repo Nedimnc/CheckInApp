@@ -46,16 +46,26 @@ export default function StudentDashboardScreen({ navigation }) {
     const interval = setInterval(async () => {
       const data = await SecureStore.getItemAsync('checkins');
       const queue = data ? JSON.parse(data) : [];
-      if (queue.length === 0) setPendingCount(0);
+      if (queue.length === 0) {
+        setPendingCount(0);
+        loadData();
+        Toast.hide();
+        Toast.show({
+          type: 'success',
+          text1: 'Sync Complete!',
+          text2: 'Your attendance records have been updated.',
+        });
+      }
     }, 3000);
     return () => clearInterval(interval);
   }, [pendingCount]);
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && !isOffline) {
+      console.log("Back online, refreshing session data");
       loadData();
     }
-  }, [isFocused]);
+  }, [isFocused, isOffline]);
 
   useEffect(() => {
     const handleCreated = (newSession) => {

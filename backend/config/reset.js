@@ -34,7 +34,8 @@ const createTablesSql = `
     session_id INT REFERENCES sessions(session_id),
     student_id INT REFERENCES users(user_id),
     check_in_time TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    check_in_status VARCHAR(20) DEFAULT 'present'
+    check_in_status VARCHAR(20) DEFAULT 'present',
+    offline_uuid UUID UNIQUE
   );
 `;
 
