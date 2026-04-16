@@ -80,6 +80,8 @@ export const syncAttendance = async (req, res) => {
     // Validate session ownership for the first check-in
     for (const checkin of checkins) {
       if (Number(checkin.user_id) !== authenticatedUserId) {
+        await client.query('ROLLBACK');
+        client.release();
         return res.status(403).json({ error: 'Unauthorized: Check-in does not belong to the authenticated user' });
       }
 
@@ -88,7 +90,7 @@ export const syncAttendance = async (req, res) => {
       INSERT INTO attendance (session_id, student_id, check_in_time, offline_uuid)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (offline_uuid) DO NOTHING`;
-      const attendanceResult = await client.query(attendanceQuery, [checkin.session_id, checkin.user_id, checkin.check_in_time, checkin.offline_uuid]);
+      await client.query(attendanceQuery, [checkin.session_id, checkin.user_id, checkin.check_in_time, checkin.offline_uuid]);
 
       // Update session status to 'checked_in' if it was 'booked'
       const sessionUpdateQuery = `
@@ -99,33 +101,33 @@ export const syncAttendance = async (req, res) => {
 
       if (sessionResult.rows.length > 0) {
         syncedData.push({
-          session: sessionResult.rows[0],
-          attendance: attendanceResult.rows[0]
+          session: sessionResult.rows[0]
         });
-      }
-
-      const io = req.app.get('socketio');
-      if (io) {
-        if (syncedData.length > 0) {
-          syncedData.forEach((item, index) => {
-            io.emit('student_checked_in', item);
-          });
-        }
       }
     }
 
     // All operations were successful
     await client.query('COMMIT');
+
     res.status(201).json({
       success: true,
       message: 'Offline check-ins synced successfully',
       count: checkins.length
     });
 
+    const io = req.app.get('socketio');
+    if (io && syncedData.length > 0) {
+      syncedData.forEach((item) => {
+        io.emit('student_checked_in', item);
+      });
+    }
+
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Batch Sync Error:', err.message);
-    res.status(500).json({ message: 'Server error during sync' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Server Error during batch sync' });
+    }
   } finally {
     client.release();
   }

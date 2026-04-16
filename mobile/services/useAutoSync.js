@@ -8,7 +8,7 @@ export const useAutoSync = () => {
     // This waits for the internet to connect
     const unsubscribe = NetInfo.addEventListener(state => {
       if (state.isConnected && state.isInternetReachable) {
-        handleAutoSync();
+        setTimeout(() => {handleAutoSync();}, 1000); // delay to ensure connection is stable
       }
     });
     return () => unsubscribe();
