@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
             Toast.show({
               type: 'greeting',
               text1: 'Welcome Back!',
-              text2: `Good to see you again, ${JSON.parse(savedUser).name}!`
+              text2: `Good to see you again, ${JSON.parse(savedUser).name.split(' ')[0]}!`
             });
           }, 500);
         }

@@ -22,7 +22,7 @@ export default function LoginScreen({ navigation }) {
         Toast.show({
           type: 'greeting',
           text1: 'Login Successful!',
-          text2: `Welcome back, ${loggedInUser.name}!`
+          text2: `Welcome back, ${loggedInUser.name.split(' ')[0]}!`
         });
       }, 500);
     } catch (error) {
@@ -57,9 +57,9 @@ export default function LoginScreen({ navigation }) {
           value={email}
         />
         <Text style={styles.label}>Password</Text>
-        <View style={styles.inputContainer}>
+        <View style={styles.passwordContainer}>
           <TextInput
-            style={styles.input}
+            style={styles.passwordInput}
             placeholder="••••••••••••"
             secureTextEntry={!isPasswordVisible}
             onChangeText={setPassword}
@@ -82,26 +82,27 @@ export default function LoginScreen({ navigation }) {
         >
           <Text style={styles.submitText}>Log In</Text>
         </TouchableOpacity>
-        {/* Quick login for developmental purposes with custom credentials for student and tutor */}
-        {/* Change 'email' and 'password' as needed */}
-        <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: '#1b3366' }]}
-          onPress={() => {
-            setEmail('student@gsu.edu');
-            setPassword('student');
-          }}
-        >
-          <Text style={styles.submitText}>Quick Student (dev button)</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.submitButton, { backgroundColor: theme.colors.success }]}
-          onPress={() => {
-            setEmail('tutor@gsu.edu');
-            setPassword('tutor');
-          }}
-        >
-          <Text style={styles.submitText}>Quick Tutor (dev button)</Text>
-        </TouchableOpacity>
+        {/* Demo accounts */}
+        <View style={styles.demoButtonContainer}>
+          <TouchableOpacity
+            style={[styles.demoButton, { backgroundColor: '#c9c9c9' }]}
+            onPress={() => {
+              setEmail('msmith@student.gsu.edu');
+              setPassword('student');
+            }}
+          >
+            <Text style={styles.demoText}>Log in as Michael</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.demoButton, { backgroundColor: '#c9c9c9' }]}
+            onPress={() => {
+              setEmail('mdavis@gsu.edu');
+              setPassword('tutor');
+            }}
+          >
+            <Text style={styles.demoText}>Log in as Dr. Davis</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.footerContainer}>
           <Text style={styles.footer}>Don't have an account? </Text>
           <TouchableOpacity onPress={() => navigation.navigate('Register')}>
@@ -129,8 +130,16 @@ const styles = StyleSheet.create({
   submitButton: { paddingVertical: theme.spacing.md, borderRadius: theme.radii.lg, alignItems: 'center', marginTop: theme.spacing.sm, },
   submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold', },
   inputContainer: { flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', },
-  eyeIcon: { position: 'absolute', right: 15, height: '70%', justifyContent: 'center', },
+  eyeIcon: { position: 'absolute', right: 15, height: 100, justifyContent: 'center', },
   footerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: theme.spacing.md, },
   footer: { textAlign: 'left', color: theme.colors.textSecondary, },
-  signUpText: { textAlign: 'right', color: theme.colors.primary, fontWeight: 'bold', textDecorationLine: 'underline', }
+  signUpText: { textAlign: 'right', color: theme.colors.primary, fontWeight: 'bold', textDecorationLine: 'underline', },
+  demoButtonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: theme.spacing.md, gap: 10, },
+  demoButton: { flex: 1, paddingVertical: theme.spacing.sm, borderRadius: theme.radii.lg, alignItems: 'center', justifyContent: 'center', height: 45, },
+  demoText: { color: '#FFF', fontSize: 14, fontWeight: '600', },
+  passwordContainer: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface,
+    borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md,
+    marginBottom: theme.spacing.sm, paddingRight: 10, },
+  passwordInput: { flex: 1, padding: theme.spacing.sm, fontSize: theme.typography.body, color: theme.colors.text, },
 });

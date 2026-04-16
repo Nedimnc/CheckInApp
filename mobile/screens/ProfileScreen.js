@@ -21,9 +21,9 @@ export default function Profile({ navigation }) {
       Toast.hide();
       setTimeout(() => {
         Toast.show({
-          type: 'success',
-          text1: 'Logout Successful!',
-          text2: `You have been logged out.`
+          type: 'logout',
+          text1: 'Logged Out',
+          text2: `See you next time, ${user.name.split(' ')[0]}!`
         });
       }, 500);
     } catch (error) {

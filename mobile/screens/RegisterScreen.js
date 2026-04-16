@@ -129,9 +129,9 @@ export default function RegisterScreen({ navigation }) {
               value={panther_id}
             />
             <Text style={styles.label}>Password</Text>
-            <View style={styles.inputContainer}>
+            <View style={styles.passwordContainer}>
               <TextInput
-                style={styles.input}
+                style={styles.passwordInput}
                 placeholder="••••••••••••"
                 secureTextEntry={!isPasswordVisible}
                 onChangeText={setPassword}
@@ -185,4 +185,9 @@ const styles = StyleSheet.create({
   submitText: { color: '#FFF', fontSize: theme.typography.h3, fontWeight: 'bold', },
   inputContainer: { flexDirection: 'row', alignItems: 'center', position: 'relative', width: '100%', },
   eyeIcon: { position: 'absolute', right: 15, height: '70%', justifyContent: 'center', },
+  passwordContainer: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: theme.colors.surface,
+    borderWidth: 1, borderColor: theme.colors.border, borderRadius: theme.radii.md,
+    marginBottom: theme.spacing.sm, paddingRight: 10, },
+  passwordInput: { flex: 1, padding: theme.spacing.sm, fontSize: theme.typography.body, color: theme.colors.text, },
 });

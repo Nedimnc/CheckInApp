@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import { ActivityIndicator, View } from 'react-native';
 import Toast, { BaseToast } from 'react-native-toast-message';
@@ -140,7 +141,7 @@ const toastConfig = {
       <View style={{ 
         justifyContent: 'center', marginLeft: 7, marginRight: 10, paddingHorizontal: 10, 
         alignContent: 'center', backgroundColor: '#F5F7FA', borderRadius: 15, height: '78%' }}>
-        <Ionicons name="hand-left-outline" size={30} color='#2D52A2' />
+        <MaterialIcons name="waving-hand" size={30} color="#2D52A2" />
       </View>
       }
     />
@@ -163,6 +164,28 @@ const toastConfig = {
         justifyContent: 'center', marginLeft: 7, marginRight: 10, paddingHorizontal: 10, 
         alignContent: 'center', backgroundColor: '#fcefef', borderRadius: 15, height: '78%' }}>
         <Ionicons name="close-circle" size={30} color='red' />
+      </View>
+      }
+    />
+  ),
+  logout: (props) => (
+    <BaseToast
+      {...props}
+      style={{ width: '92.7%', borderRadius: 20, borderLeftWidth: 0, borderLeftColor: 'white', justifyContent: 'center', alignItems: 'center' }}
+      contentContainerStyle={{ paddingHorizontal: 0 }}
+      text1Style={{
+        fontSize: 16,
+        fontWeight: '600'
+      }}
+      text2Style={{
+        fontSize: 14,
+        fontWeight: '400'
+      }}
+      renderLeadingIcon={() => 
+      <View style={{ 
+        justifyContent: 'center', marginLeft: 7, marginRight: 10, paddingHorizontal: 10, 
+        alignContent: 'center', backgroundColor: '#fcefef', borderRadius: 15, height: '78%' }}>
+        <MaterialIcons name="logout" size={30} color="red" />
       </View>
       }
     />
